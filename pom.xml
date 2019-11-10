@@ -12,7 +12,6 @@
         <module>components/eventflows.elasticsearch</module>
         <module>components/eventflows.quartz</module>
         <module>components/eventflows.repository</module>
-        <module>components/eventflows.repository.slick</module>
         <module>components/eventflows.redis</module>
         <module>components/eventflows.repository.mongodb</module>
     </modules>
