@@ -22,10 +22,4 @@ object Curl {
       .setBody(body)
       .execute().get()
   }
-
-  implicit class CurlExtension(rep: Response) {
-    def readAsString = rep.getResponseBody(UTF_8.INSTANCE)
-
-    def readAs[T: Manifest] = deserialize[T](readAsString, DefaultFormats)
-  }
 }

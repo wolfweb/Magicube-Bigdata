@@ -1,7 +1,6 @@
 package com.magicube.eventflows
 
 import com.magicube.eventflows.Net.Curl
-import com.magicube.eventflows.Net.Curl.CurlExtension
 import org.junit.Test
 
 class CurlTest{

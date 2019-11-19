@@ -29,7 +29,7 @@ case class MSSQLServer(url: String, user: String = null, password: String = null
 }
 
 case class MySql(url: String, user: String = null, password: String = null)
-  extends EntityDatabaseAdapter(url, "com.mysql.jdbc.Driver", user, password) {
+  extends EntityDatabaseAdapter(url, "com.mysql.cj.jdbc.Driver", user, password) {
   val adapter = new MySQLAdapter
 }
 

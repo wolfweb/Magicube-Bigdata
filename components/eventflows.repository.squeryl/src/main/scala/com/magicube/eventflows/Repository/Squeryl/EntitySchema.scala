@@ -1,10 +1,13 @@
 package com.magicube.eventflows.Repository.Squeryl
 
-import com.magicube.eventflows.Repository.Squeryl.Util.Companion
 import com.mchange.v2.c3p0.ComboPooledDataSource
 import org.slf4j.LoggerFactory
 import org.squeryl.PrimitiveTypeMode._
 import org.squeryl._
+
+case class DbSchema(adapter: EntityDatabaseAdapter) extends EntitySchema() {
+  databaseAdapter = adapter
+}
 
 trait EntitySchema extends Schema {
   protected val logger = LoggerFactory.getLogger(getClass.getName)
@@ -22,13 +25,9 @@ trait EntitySchema extends Schema {
 
   def dataSource: ComboPooledDataSource = databaseAdapter.DataSource
 
-  def Table[T <: IEntity[_]]()(implicit manifestT: Manifest[T]): Table[T] = createTable {
-    super.table()
-  }
+  def Table[T <: IEntity[_]]()(implicit manifestT: Manifest[T]): Table[T] = super.table()
 
-  def Table[T <: IEntity[_]](name: String)(implicit manifestT: Manifest[T]): Table[T] = createTable {
-    super.table(name)
-  }
+  def Table[T <: IEntity[_]](name: String)(implicit manifestT: Manifest[T]): Table[T] =  super.table(name)
 
   def newSession = SessionFactory.newSession
 
@@ -40,17 +39,6 @@ trait EntitySchema extends Schema {
   def createSession: Session = {
     logger.debug(s"Create Session of ${dataSource.getJdbcUrl}")
     Session.create(dataSource.getConnection, databaseAdapter.adapter)
-  }
-
-  protected def createTable[T <: IEntity[_]](func: => Table[T])(implicit manifestT: Manifest[T]): Table[T] = {
-    Companion.of[T] match {
-      case Some(companion) => {
-        val t = func
-        companion.asInstanceOf[RepositoryBase[_, T]].set(this, t)
-        t
-      }
-      case None => throw new IllegalStateException(s"${manifestT.runtimeClass.getSimpleName}:Cannot find companion object")
-    }
   }
 
   override def drop() = inTransaction {

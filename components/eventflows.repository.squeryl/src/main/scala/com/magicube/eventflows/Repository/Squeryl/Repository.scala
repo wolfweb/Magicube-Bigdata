@@ -7,11 +7,15 @@ import org.squeryl.dsl._
 import org.squeryl.dsl.ast._
 import org.squeryl.dsl.boilerplate.FromSignatures
 
-trait Repository[T <: IEntity[Long]] extends RepositoryBase[Long, T] {
+case class Repository[T <: IEntity[Long]](adapter: EntityDatabaseAdapter, tbName: String = null)(implicit manifestT: Manifest[T]) extends RepositoryBase[Long, T] {
+  override var schema: EntitySchema = DbSchema(adapter)
+
   override def idToTypedExpressionNode(id: Long): TypedExpressionNode[_] = id
+
+  override def table: Table[T] = if (tbName != null) schema.Table[T](tbName) else schema.Table[T]()
 }
 
-trait RepositoryBase[K, T <: IEntity[K]] extends FromSignatures {
+abstract class RepositoryBase[K, T <: IEntity[K]]()(implicit manifestT: Manifest[T]) extends FromSignatures {
   protected val logger = LoggerFactory.getLogger(getClass.getName)
 
   var schema: EntitySchema
@@ -26,11 +30,6 @@ trait RepositoryBase[K, T <: IEntity[K]] extends FromSignatures {
 
   def tableName: String = table.name
 
-  def set(schema: EntitySchema, table: Table[T]) {
-    this.schema = schema
-    this._table = Some(table)
-  }
-
   def idToTypedExpressionNode(v: K): TypedExpressionNode[_]
 
   def resetAutoIncrement() {
@@ -41,6 +40,41 @@ trait RepositoryBase[K, T <: IEntity[K]] extends FromSignatures {
       statement.execute()
       con.commit()
     }
+  }
+
+  def all: Seq[T] = inTransaction {
+    logger.debug(repo.statement)
+    repo.toSeq
+  }
+
+  def create(entity: T) = inTransaction {
+    table.insert(entity)
+    this
+  }
+
+  def countAll: Long = inTransaction {
+    val query = from(repo)(e => compute(count(idToTypedExpressionNode(e.id))))
+    logger.debug(query.statement)
+    query.toLong
+  }
+
+  def countBy(whereClauseFunctor: T => LogicalBoolean): Long = inTransaction {
+    val query = from(repo)(e => where(whereClauseFunctor(e)) compute (count(idToTypedExpressionNode(e.id))))
+    logger.debug(query.statement)
+    val result: Long = query
+    result
+  }
+
+  def delete(id: K): Boolean = inTransaction {
+    table.delete(id)
+  }
+
+  def deleteAll(): Long = inTransaction {
+    repo.deleteWhere(e => 1 === 1)
+  }
+
+  def deleteAll(whereClauseFunctor: T => LogicalBoolean): Long = inTransaction {
+    repo.deleteWhere(whereClauseFunctor)
   }
 
   def exists(id: K): Boolean = inTransaction {
@@ -86,30 +120,6 @@ trait RepositoryBase[K, T <: IEntity[K]] extends FromSignatures {
     query.toSeq
   }
 
-  def all: Seq[T] = inTransaction {
-    logger.debug(repo.statement)
-    repo.toSeq
-  }
-
-  def first: Option[T] = inTransaction {
-    val query = repo.where(e => 1 === 1).page(0, 1)
-    logger.debug(query.statement)
-    val e = query.single
-    if (e != null) {
-      Option(e)
-    } else {
-      None
-    }
-  }
-
-  def deleteAll(): Long = inTransaction {
-    repo.deleteWhere(e => 1 === 1)
-  }
-
-  def deleteAll(whereClauseFunctor: T => LogicalBoolean): Long = inTransaction {
-    repo.deleteWhere(whereClauseFunctor)
-  }
-
   def fetch(page: Int, pageLength: Int): Seq[T] = inTransaction {
     val query = from(repo)(e =>
       where(1 === 1)
@@ -140,16 +150,27 @@ trait RepositoryBase[K, T <: IEntity[K]] extends FromSignatures {
     query.toSeq
   }
 
-  def countAll: Long = inTransaction {
-    val query = from(repo)(e => compute(count(idToTypedExpressionNode(e.id))))
+  def first(whereClauseFunctor: T => LogicalBoolean, orderByFunctor: T => ExpressionNode): Option[T] = inTransaction {
+    val query = from(repo)(e =>
+      where(whereClauseFunctor(e))
+        select (e)
+        orderBy (orderByFunctor(e))
+    ).page(0, 1)
     logger.debug(query.statement)
-    query.toLong
+    val e = query.single
+    if (e != null) {
+      Option(e)
+    } else {
+      None
+    }
   }
 
-  def countBy(whereClauseFunctor: T => LogicalBoolean): Long = inTransaction {
-    val query = from(repo)(e => where(whereClauseFunctor(e)) compute (count(idToTypedExpressionNode(e.id))))
-    logger.debug(query.statement)
-    val result: Long = query
-    result
+  def save(entity: T): Boolean = inTransaction {
+    table.insert(entity) != null
+  }
+
+  def update(entity: T) = inTransaction {
+    table.update(entity)
+    this
   }
 }
