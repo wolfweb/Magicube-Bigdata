@@ -8,6 +8,7 @@
     <version>1.0-SNAPSHOT</version>
     <modules>
         <module>core/eventflows.infrastructure</module>
+        <module>core/eventflows.flinkkafka</module>
         <module>core/eventflows.core</module>
         <module>components/eventflows.elasticsearch</module>
         <module>components/eventflows.quartz</module>
@@ -103,6 +104,16 @@
             <dependency>
                 <groupId>org.apache.flink</groupId>
                 <artifactId>flink-connector-rabbitmq_${scala.version}</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-gelly_${scala.version}</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-gelly-scala_${scala.version}</artifactId>
                 <version>${flink.version}</version>
             </dependency>
 
