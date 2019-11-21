@@ -2,23 +2,33 @@ package com.magicube.eventflows.cache.Redis
 
 import com.magicube.eventflows.Json.JSON._
 import org.json4s.DefaultFormats
+import org.slf4j.LoggerFactory
 import redis.clients.jedis.Jedis
 
 import scala.collection.JavaConverters._
 
 
 case class RedisService(conf: RedisConf) {
+  protected val logger = LoggerFactory.getLogger(getClass.getName)
+
   private val _client = new Jedis(conf.host, conf.port)
 
   //30 hour
   val defExpire = 108000
 
-  def del(key: String): Unit = _client.del(key)
+  def del(key: String): Unit = {
+    _client.del(key)
+    logger.debug(s"delete key $key")
+  }
 
-  def get(key: String): String = _client.get(key)
+  def get(key: String): String = {
+    val v = _client.get(key)
+    logger.debug(s"get key $key with value $v")
+    v
+  }
 
   def getAs[T: Manifest](key: String): T = {
-    val v = _client.get(key)
+    val v = get(key)
     if (v != null)
       deserialize(v, DefaultFormats)
     else
@@ -28,7 +38,7 @@ case class RedisService(conf: RedisConf) {
   def getHashSize(key: String): Long = _client.hlen(key)
 
   def getIncr(key: String): Long = {
-    val v = _client.get(key)
+    val v = get(key)
     if (v == null || v.isEmpty)
       0
     else

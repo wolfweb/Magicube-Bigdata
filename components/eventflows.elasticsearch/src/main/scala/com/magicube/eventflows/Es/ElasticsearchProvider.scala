@@ -10,10 +10,14 @@ import io.searchbox.core._
 import io.searchbox.indices._
 import org.elasticsearch.index.query.QueryBuilders
 import org.elasticsearch.search.builder.SearchSourceBuilder
+import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConversions._
 import scala.reflect.ClassTag
+
 case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf)(implicit clasz: Class[T]) extends Serializable {
+  protected val logger = LoggerFactory.getLogger(getClass.getName)
+
   val client: JestClient = {
     val factory = new JestClientFactory
     factory.setHttpClientConfig(new HttpClientConfig
@@ -31,7 +35,7 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     var result: JestResult = null
     try {
       result = client.execute(deleteIndex)
-      println(s"deleteIndex----------${result.getJsonString}")
+      logger.debug(s"deleteIndex----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
@@ -43,7 +47,7 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     var result: JestResult = null
     try {
       result = client.execute(closeIndex)
-      println(s"clearCache----------${result.getJsonString}")
+      logger.debug(s"clearCache----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
@@ -56,7 +60,7 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     var result: JestResult = null
     try {
       result = client.execute(closeIndex)
-      println(s"closeIndex----------${result.getJsonString}")
+      logger.debug(s"closeIndex----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
@@ -68,7 +72,7 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     var result: JestResult = null
     try {
       result = client.execute(closeIndex)
-      println(s"optimizeIndex----------${result.getJsonString}")
+      logger.debug(s"optimizeIndex----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
@@ -80,7 +84,7 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     var result: JestResult = null
     try {
       result = client.execute(closeIndex)
-      println(s"flushIndex----------${result.getJsonString}")
+      logger.debug(s"flushIndex----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
@@ -92,7 +96,7 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     var result: JestResult = null
     try {
       result = client.execute(closeIndex)
-      println(s"indicesExists----------${result.getJsonString}")
+      logger.debug(s"indicesExists----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
@@ -104,7 +108,7 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     var result: JestResult = null
     try {
       result = client.execute(closeIndex)
-      println(s"nodesInfo----------${result.getJsonString}")
+      logger.debug(s"nodesInfo----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
@@ -116,7 +120,7 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     var result: JestResult = null
     try {
       result = client.execute(closeIndex)
-      println(s"health----------${result.getJsonString}")
+      logger.debug(s"health----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
@@ -128,7 +132,7 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     var result: JestResult = null
     try {
       result = client.execute(closeIndex)
-      println(s"nodesStats----------${result.getJsonString}")
+      logger.debug(s"nodesStats----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
@@ -141,7 +145,7 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     var result: JestResult = null
     try {
       result = client.execute(update)
-      println(s"updateDocument----------${result.getJsonString}")
+      logger.debug(s"updateDocument----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
@@ -154,7 +158,7 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     var result: JestResult = null
     try {
       result = client.execute(delete)
-      println(s"deleteDocument----------${result.getJsonString}")
+      logger.debug(s"deleteDocument----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
@@ -167,7 +171,7 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     var result: JestResult = null
     try {
       result = client.execute(query)
-      println(s"deleteDocument----------${result.getJsonString}")
+      logger.debug(s"deleteDocument----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
@@ -180,7 +184,7 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     var res: T = null.asInstanceOf[T]
     try {
       val result = client.execute(get)
-      println(s"deleteDocument----------${result.getJsonString}")
+      logger.debug(s"deleteDocument----------${result.getJsonString}")
       res = result.getSourceAsObject(clasz).asInstanceOf[T]
     } catch {
       case e: IOException => e.printStackTrace
@@ -215,7 +219,7 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     var list: List[T] = null
     try {
       val result = client.execute(search)
-      if(result.isSucceeded) {
+      if (result.isSucceeded) {
         list = result.getHits(clasz).map(x => x.source.asInstanceOf[T]).toList
       }
     } catch {
@@ -231,7 +235,7 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     var result: JestResult = null
     try {
       result = client.execute(index)
-      println(s"createIndex----------${result.getJsonString}")
+      logger.debug(s"createIndex----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
