@@ -41,12 +41,12 @@ trait EntitySchema extends Schema {
     Session.create(dataSource.getConnection, databaseAdapter.adapter)
   }
 
-  override def drop() = inTransaction {
+  override def drop() = using {
     logger.debug(s"Drop:$schemaName")
     super.drop
   }
 
-  override def create() = inTransaction {
+  override def create() = using {
     logger.debug(s"Create:$schemaName")
     printDdl
     super.create
@@ -67,4 +67,32 @@ trait EntitySchema extends Schema {
   def sessionFactory: () => Session = { () => this.createSession }
 
   def setLogger(debug: String) = Session.currentSession.setLogger(s => println(s"$debug $s"))
+
+  def using[R](func: => R) = {
+    val session = EntitySchema.getOrCreateSession(databaseAdapter) {
+      createSession
+    }
+    session.bindToCurrentThread
+    try {
+      func
+    } finally {
+      session.unbindFromCurrentThread
+      session.cleanup
+    }
+  }
+}
+
+object EntitySchema {
+  private var concreteFactory: Map[EntityDatabaseAdapter, Session] = Map[EntityDatabaseAdapter, Session]()
+
+  def getOrCreateSession(adapter: EntityDatabaseAdapter)(func: => Session) = {
+    val filters = concreteFactory.filter(x => x._1 == adapter)
+    if (filters.size > 0) {
+      filters.head._2
+    } else {
+      val session = func
+      concreteFactory += (adapter -> func)
+      session
+    }
+  }
 }

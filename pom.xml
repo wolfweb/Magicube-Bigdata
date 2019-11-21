@@ -14,6 +14,7 @@
         <module>components/eventflows.repository</module>
         <module>components/eventflows.redis</module>
         <module>components/eventflows.repository.mongodb</module>
+        <module>components/eventflows.repository.squeryl</module>
     </modules>
     <packaging>pom</packaging>
 

@@ -33,7 +33,7 @@ abstract class RepositoryBase[K, T <: IEntity[K]]()(implicit manifestT: Manifest
   def idToTypedExpressionNode(v: K): TypedExpressionNode[_]
 
   def resetAutoIncrement() {
-    transaction {
+    schema.using {
       val query = schema.dbAdapter.autoInclementSql(tableName)
       val con = Session.currentSession.connection
       val statement = con.prepareStatement(query)
@@ -42,61 +42,61 @@ abstract class RepositoryBase[K, T <: IEntity[K]]()(implicit manifestT: Manifest
     }
   }
 
-  def all: Seq[T] = inTransaction {
+  def all: Seq[T] = schema.using {
     logger.debug(repo.statement)
     repo.toSeq
   }
 
-  def create(entity: T) = inTransaction {
+  def create(entity: T) = schema.using {
     table.insert(entity)
     this
   }
 
-  def countAll: Long = inTransaction {
+  def countAll: Long = schema.using {
     val query = from(repo)(e => compute(count(idToTypedExpressionNode(e.id))))
     logger.debug(query.statement)
     query.toLong
   }
 
-  def countBy(whereClauseFunctor: T => LogicalBoolean): Long = inTransaction {
+  def countBy(whereClauseFunctor: T => LogicalBoolean): Long = schema.using {
     val query = from(repo)(e => where(whereClauseFunctor(e)) compute (count(idToTypedExpressionNode(e.id))))
     logger.debug(query.statement)
     val result: Long = query
     result
   }
 
-  def delete(id: K): Boolean = inTransaction {
+  def delete(id: K): Boolean = schema.using {
     table.delete(id)
   }
 
-  def deleteAll(): Long = inTransaction {
+  def deleteAll(): Long = schema.using {
     repo.deleteWhere(e => 1 === 1)
   }
 
-  def deleteAll(whereClauseFunctor: T => LogicalBoolean): Long = inTransaction {
+  def deleteAll(whereClauseFunctor: T => LogicalBoolean): Long = schema.using {
     repo.deleteWhere(whereClauseFunctor)
   }
 
-  def exists(id: K): Boolean = inTransaction {
+  def exists(id: K): Boolean = schema.using {
     repo.lookup(id) match {
       case Some(value) => true
       case _ => false
     }
   }
 
-  def findById(id: K): Option[T] = inTransaction {
+  def findById(id: K): Option[T] = schema.using {
     logger.debug(s"find $tableName by id = $id")
     val e = repo.lookup(id)
     e.asInstanceOf[Option[T]]
   }
 
-  def find(whereClauseFunctor: T => LogicalBoolean)(implicit dsl: QueryDsl): Seq[T] = inTransaction {
+  def find(whereClauseFunctor: T => LogicalBoolean)(implicit dsl: QueryDsl): Seq[T] = schema.using {
     val query = repo.where(whereClauseFunctor)(dsl)
     logger.debug(query.statement)
     query.toSeq
   }
 
-  def find(whereClauseFunctor: T => LogicalBoolean, orderByFunctor: T => ExpressionNode)(implicit dsl: QueryDsl): Seq[T] = inTransaction {
+  def find(whereClauseFunctor: T => LogicalBoolean, orderByFunctor: T => ExpressionNode)(implicit dsl: QueryDsl): Seq[T] = schema.using {
     val query = from(repo)(e =>
       where(whereClauseFunctor(e))
         select (e)
@@ -110,7 +110,7 @@ abstract class RepositoryBase[K, T <: IEntity[K]]()(implicit manifestT: Manifest
     whereClauseFunctor: T => LogicalBoolean,
     orderByFunctor1: T => ExpressionNode,
     orderByFunctor2: T => ExpressionNode
-  )(implicit dsl: QueryDsl): Seq[T] = inTransaction {
+  )(implicit dsl: QueryDsl): Seq[T] = schema.using {
     val query = from(repo)(e =>
       where(whereClauseFunctor(e))
         select (e)
@@ -120,7 +120,7 @@ abstract class RepositoryBase[K, T <: IEntity[K]]()(implicit manifestT: Manifest
     query.toSeq
   }
 
-  def fetch(page: Int, pageLength: Int): Seq[T] = inTransaction {
+  def fetch(page: Int, pageLength: Int): Seq[T] = schema.using {
     val query = from(repo)(e =>
       where(1 === 1)
         select (e)
@@ -130,7 +130,7 @@ abstract class RepositoryBase[K, T <: IEntity[K]]()(implicit manifestT: Manifest
     query.toSeq
   }
 
-  def fetch(whereClauseFunctor: T => LogicalBoolean)(page: Int, pageLength: Int)(implicit dsl: QueryDsl): Seq[T] = inTransaction {
+  def fetch(whereClauseFunctor: T => LogicalBoolean)(page: Int, pageLength: Int)(implicit dsl: QueryDsl): Seq[T] = schema.using {
     val query = from(repo)(e =>
       where(whereClauseFunctor(e))
         select (e)
@@ -140,7 +140,7 @@ abstract class RepositoryBase[K, T <: IEntity[K]]()(implicit manifestT: Manifest
     query.toSeq
   }
 
-  def fetch(whereClauseFunctor: T => LogicalBoolean, orderByFunctor: T => ExpressionNode)(page: Int, pageLength: Int)(implicit dsl: QueryDsl): Seq[T] = inTransaction {
+  def fetch(whereClauseFunctor: T => LogicalBoolean, orderByFunctor: T => ExpressionNode)(page: Int, pageLength: Int)(implicit dsl: QueryDsl): Seq[T] = schema.using {
     val query = from(repo)(e =>
       where(whereClauseFunctor(e))
         select (e)
@@ -150,7 +150,7 @@ abstract class RepositoryBase[K, T <: IEntity[K]]()(implicit manifestT: Manifest
     query.toSeq
   }
 
-  def first(whereClauseFunctor: T => LogicalBoolean, orderByFunctor: T => ExpressionNode): Option[T] = inTransaction {
+  def first(whereClauseFunctor: T => LogicalBoolean, orderByFunctor: T => ExpressionNode): Option[T] = schema.using {
     val query = from(repo)(e =>
       where(whereClauseFunctor(e))
         select (e)
@@ -165,11 +165,11 @@ abstract class RepositoryBase[K, T <: IEntity[K]]()(implicit manifestT: Manifest
     }
   }
 
-  def save(entity: T): Boolean = inTransaction {
+  def save(entity: T): Boolean = schema.using {
     table.insert(entity) != null
   }
 
-  def update(entity: T) = inTransaction {
+  def update(entity: T) = schema.using {
     table.update(entity)
     this
   }

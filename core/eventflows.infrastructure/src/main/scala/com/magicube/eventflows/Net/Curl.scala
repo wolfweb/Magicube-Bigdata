@@ -1,12 +1,9 @@
 package com.magicube.eventflows.Net
 
 import com.magicube.eventflows.Json.JSON._
-import org.asynchttpclient.{AsyncHttpClient, Response}
 import org.asynchttpclient.Dsl._
+import org.asynchttpclient.{AsyncHttpClient, Request, Response}
 import org.json4s.DefaultFormats
-import sun.nio.cs.UTF_8
-
-import scala.reflect.ClassTag
 
 case class RespMessage[T](code: Int = 0, data: T = null, message: String = "")
 
@@ -21,5 +18,10 @@ object Curl {
       .setHeader("Content-Type", "application/json")
       .setBody(body)
       .execute().get()
+  }
+
+  def postAsJson[TData: Manifest](req: Request, data: TData): Response = {
+    val body = serialize(data, DefaultFormats)
+    client.executeRequest(req).get()
   }
 }
