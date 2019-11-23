@@ -9,9 +9,9 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
+
     <groupId>com.magicube</groupId>
     <artifactId>eventflows.repository.squeryl</artifactId>
-    <version>1.0-SNAPSHOT</version>
 
     <dependencies>
         <dependency>

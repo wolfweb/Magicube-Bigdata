@@ -18,7 +18,6 @@
         <module>components/eventflows.repository.squeryl</module>
         <module>apps/eventflows.host</module>
     </modules>
-    <packaging>pom</packaging>
 
     <dependencyManagement>
         <dependencies>

@@ -12,7 +12,12 @@
 
     <groupId>com.magicube</groupId>
     <artifactId>eventflows.repository</artifactId>
-    <version>1.0-SNAPSHOT</version>
 
-
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>
