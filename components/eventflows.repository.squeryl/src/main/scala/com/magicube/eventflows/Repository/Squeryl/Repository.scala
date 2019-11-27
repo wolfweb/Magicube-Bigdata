@@ -14,6 +14,8 @@ case class Repository[K, T <: IEntity[K]](adapter: EntityDatabaseAdapter, tbName
 
   def schemaName: String = schema.schemaName
 
+  def tableName: String = table.name
+
   def table: Table[T] = Repository.getOrCreateTable[K, T](adapter, manifestT) {
     if (tbName != null)
       schema.Table[T](tbName)
@@ -40,6 +42,7 @@ case class Repository[K, T <: IEntity[K]](adapter: EntityDatabaseAdapter, tbName
   }
 
   def findById(id: K)(implicit toCanLookup: K => CanLookup): Option[T] = inTransaction(schema.sessionfactory) {
+    logger.debug(s"find $tableName by id = $id")
     val e = repo.lookup(id)
     e.asInstanceOf[Option[T]]
   }

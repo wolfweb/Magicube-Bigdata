@@ -42,6 +42,12 @@ class RepositoryTest {
     entity = remoteRep.first(x => x.Id gt 0, x => x.Id desc)
     assert(entity != None)
 
+    entity = localRep.findById(10)
+    assert(entity==None)
+
+    entity = remoteRep.findById(10)
+    assert(entity==None)
+
     entity = localRep.first(x => x.Id === 10, x => x.Id desc)
     assert(entity == None)
     entity = remoteRep.first(x => x.Id === 10, x => x.Id desc)
