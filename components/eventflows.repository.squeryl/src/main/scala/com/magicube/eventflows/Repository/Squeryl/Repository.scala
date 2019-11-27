@@ -110,7 +110,7 @@ object Repository {
 
   def getOrCreateSchema(adapter: EntityDatabaseAdapter): EntitySchema = {
     val filters = concreteFactory.filter(x => x._1 == adapter)
-    if (filters.size > 0) {
+    if (filters.nonEmpty) {
       filters.head._2
     } else {
       val schema = EntitySchema(adapter)
@@ -121,7 +121,7 @@ object Repository {
 
   def getOrCreateTable[K, T <: IEntity[K]](adapter: EntityDatabaseAdapter, manifest: Manifest[T])(el: => Table[T]): Table[T] = {
     val filters = concreteTables.filter(x => x.adapter == adapter && x.manifest == manifest)
-    if (filters.size > 0)
+    if (filters.nonEmpty)
       filters.head.table.asInstanceOf[Table[T]]
     else {
       val table = el
