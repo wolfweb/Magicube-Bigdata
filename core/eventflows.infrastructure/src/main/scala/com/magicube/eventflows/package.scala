@@ -11,6 +11,7 @@ import org.joda.time.format.DateTimeFormat
 import org.json4s.DefaultFormats
 
 package object eventflows {
+  val dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
 
   implicit class StringExtension(v: String) {
     def toSqlTime(dateFormat: String) = {
@@ -21,6 +22,11 @@ package object eventflows {
     def toDateTime(dateFormat: String) = {
       DateTime.parse(v, DateTimeFormat.forPattern(dateFormat))
     }
+  }
+
+  implicit def toSqlTime(v: DateTime) = {
+    val sf = new SimpleDateFormat(dateFormat)
+    new Timestamp(sf.parse(v.toString(dateFormat)).getTime)
   }
 
   implicit class SqlTimeExtension(v: Timestamp) {

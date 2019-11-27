@@ -2,6 +2,8 @@ package com.magicube.eventflows.Repository.Squeryl
 
 import org.squeryl._
 
-trait EntityBase extends IEntity[Long] {}
+trait IEntity[K] extends KeyedEntity[K] {
+  var Id: K
+}
 
-trait IEntity[K] extends KeyedEntity[K] {}
+trait EntityBase extends IEntity[Long] {}

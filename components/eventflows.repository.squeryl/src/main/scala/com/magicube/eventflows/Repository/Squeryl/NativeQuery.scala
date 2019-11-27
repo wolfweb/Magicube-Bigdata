@@ -21,7 +21,7 @@ case class NativeQuery(schema: EntitySchema)  {
     }
   }
 
-  def connection: Connection = schema.newSession.connection
+  def connection: Connection = schema.sessionfactory.newSession.connection
 
   import scala.collection.mutable.ListBuffer
 

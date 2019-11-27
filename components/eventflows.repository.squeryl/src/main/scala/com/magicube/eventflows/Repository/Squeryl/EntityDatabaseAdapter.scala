@@ -7,6 +7,7 @@ import org.squeryl.internals.DatabaseAdapter
 
 abstract class EntityDatabaseAdapter(url: String, driver: String, user: String = null, password: String = null) {
   protected val logger = LoggerFactory.getLogger(getClass.getName)
+
   val DataSource: ComboPooledDataSource = createDateSource(url, driver, user, password)
   val adapter: DatabaseAdapter
 

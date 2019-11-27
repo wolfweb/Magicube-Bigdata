@@ -5,159 +5,79 @@ import org.squeryl.PrimitiveTypeMode._
 import org.squeryl._
 import org.squeryl.dsl._
 import org.squeryl.dsl.ast._
-import org.squeryl.dsl.boilerplate.FromSignatures
+import scala.collection.mutable.{Map, Set}
 
-case class Repository[T <: IEntity[Long]](adapter: EntityDatabaseAdapter, tbName: String = null)(implicit manifestT: Manifest[T]) extends RepositoryBase[Long, T] {
-  override var schema: EntitySchema = DbSchema(adapter)
-
-  override def idToTypedExpressionNode(id: Long): TypedExpressionNode[_] = id
-
-  override def table: Table[T] = if (tbName != null) schema.Table[T](tbName) else schema.Table[T]()
-}
-
-abstract class RepositoryBase[K, T <: IEntity[K]]()(implicit manifestT: Manifest[T]) extends FromSignatures {
+case class Repository[K, T <: IEntity[K]](adapter: EntityDatabaseAdapter, tbName: String = null)(implicit manifestT: Manifest[T]) {
   protected val logger = LoggerFactory.getLogger(getClass.getName)
 
-  var schema: EntitySchema
-
-  protected var _table: Option[Table[T]] = None
+  val schema: EntitySchema = Repository.getOrCreateSchema(adapter)
 
   def schemaName: String = schema.schemaName
 
-  def table: Table[T] = _table.getOrElse(throw new IllegalAccessException("Set Table!!"))
+  def table: Table[T] = Repository.getOrCreateTable[K, T](adapter, manifestT) {
+    if (tbName != null)
+      schema.Table[T](tbName)
+    else
+      schema.Table[T]()
+  }
 
   def repo: Table[T] = this.table
 
-  def tableName: String = table.name
-
-  def idToTypedExpressionNode(v: K): TypedExpressionNode[_]
-
-  def resetAutoIncrement() {
-    schema.using {
-      val query = schema.dbAdapter.autoInclementSql(tableName)
-      val con = Session.currentSession.connection
-      val statement = con.prepareStatement(query)
-      statement.execute()
-      con.commit()
-    }
-  }
-
-  def all: Seq[T] = schema.using {
-    logger.debug(repo.statement)
-    repo.toSeq
-  }
-
-  def create(entity: T) = schema.using {
+  def create(entity: T) = inTransaction(schema.sessionfactory) {
     table.insert(entity)
-    this
   }
 
-  def countAll: Long = schema.using {
-    val query = from(repo)(e => compute(count(idToTypedExpressionNode(e.id))))
-    logger.debug(query.statement)
-    query.toLong
-  }
-
-  def countBy(whereClauseFunctor: T => LogicalBoolean): Long = schema.using {
-    val query = from(repo)(e => where(whereClauseFunctor(e)) compute (count(idToTypedExpressionNode(e.id))))
-    logger.debug(query.statement)
-    val result: Long = query
-    result
-  }
-
-  def delete(id: K): Boolean = schema.using {
+  def delete(id: K)(implicit toCanLookup: K => CanLookup): Boolean = inTransaction(schema.sessionfactory) {
     table.delete(id)
   }
 
-  def deleteAll(): Long = schema.using {
+  def deleteAll(): Long = inTransaction(schema.sessionfactory) {
     repo.deleteWhere(e => 1 === 1)
   }
 
-  def deleteAll(whereClauseFunctor: T => LogicalBoolean): Long = schema.using {
+  def deleteAll(whereClauseFunctor: T => LogicalBoolean): Long = inTransaction(schema.sessionfactory) {
     repo.deleteWhere(whereClauseFunctor)
   }
 
-  def exists(id: K): Boolean = schema.using {
-    repo.lookup(id) match {
-      case Some(value) => true
-      case _ => false
-    }
-  }
-
-  def findById(id: K): Option[T] = schema.using {
-    logger.debug(s"find $tableName by id = $id")
+  def findById(id: K)(implicit toCanLookup: K => CanLookup): Option[T] = inTransaction(schema.sessionfactory) {
     val e = repo.lookup(id)
     e.asInstanceOf[Option[T]]
   }
 
-  def find(whereClauseFunctor: T => LogicalBoolean)(implicit dsl: QueryDsl): Seq[T] = schema.using {
+  def find(whereClauseFunctor: T => LogicalBoolean)(implicit dsl: QueryDsl): List[T] = inTransaction(schema.sessionfactory) {
     val query = repo.where(whereClauseFunctor)(dsl)
     logger.debug(query.statement)
-    query.toSeq
+    query.toList
   }
 
-  def find(whereClauseFunctor: T => LogicalBoolean, orderByFunctor: T => ExpressionNode)(implicit dsl: QueryDsl): Seq[T] = schema.using {
+  def find(whereClauseFunctor: T => LogicalBoolean, orderByFunctor: T => ExpressionNode)(implicit dsl: QueryDsl): List[T] = inTransaction(schema.sessionfactory) {
     val query = from(repo)(e =>
       where(whereClauseFunctor(e))
         select (e)
-        orderBy (orderByFunctor(e)))
+        orderBy (orderByFunctor(e))
+    )
     logger.debug(query.statement)
-    query.toSeq
+    query.toList
   }
 
-  def find
-  (
-    whereClauseFunctor: T => LogicalBoolean,
-    orderByFunctor1: T => ExpressionNode,
-    orderByFunctor2: T => ExpressionNode
-  )(implicit dsl: QueryDsl): Seq[T] = schema.using {
+  def find(pageSize: Int, skip: Int, whereClauseFunctor: T => LogicalBoolean, orderByFunctor: T => ExpressionNode)(implicit dsl: QueryDsl): List[T] = inTransaction(schema.sessionfactory) {
     val query = from(repo)(e =>
       where(whereClauseFunctor(e))
         select (e)
-        orderBy(orderByFunctor1(e), orderByFunctor2(e)))
-
+        orderBy (orderByFunctor(e))
+    ).page(skip, pageSize)
     logger.debug(query.statement)
-    query.toSeq
+    query.toList
   }
 
-  def fetch(page: Int, pageLength: Int): Seq[T] = schema.using {
-    val query = from(repo)(e =>
-      where(1 === 1)
-        select (e)
-        orderBy (idToTypedExpressionNode(e.id) asc))
-      .page((page - 1) * pageLength, pageLength)
-    logger.debug(query.statement)
-    query.toSeq
-  }
-
-  def fetch(whereClauseFunctor: T => LogicalBoolean)(page: Int, pageLength: Int)(implicit dsl: QueryDsl): Seq[T] = schema.using {
-    val query = from(repo)(e =>
-      where(whereClauseFunctor(e))
-        select (e)
-        orderBy (idToTypedExpressionNode(e.id) asc))
-      .page((page - 1) * pageLength, pageLength)
-    logger.debug(query.statement)
-    query.toSeq
-  }
-
-  def fetch(whereClauseFunctor: T => LogicalBoolean, orderByFunctor: T => ExpressionNode)(page: Int, pageLength: Int)(implicit dsl: QueryDsl): Seq[T] = schema.using {
-    val query = from(repo)(e =>
-      where(whereClauseFunctor(e))
-        select (e)
-        orderBy (orderByFunctor(e)))
-      .page((page - 1) * pageLength, pageLength)
-    logger.debug(query.statement)
-    query.toSeq
-  }
-
-  def first(whereClauseFunctor: T => LogicalBoolean, orderByFunctor: T => ExpressionNode): Option[T] = schema.using {
+  def first(whereClauseFunctor: T => LogicalBoolean, orderByFunctor: T => ExpressionNode): Option[T] = inTransaction(schema.sessionfactory) {
     val query = from(repo)(e =>
       where(whereClauseFunctor(e))
         select (e)
         orderBy (orderByFunctor(e))
     ).page(0, 1)
     logger.debug(query.statement)
-    val e = query.single
+    val e = if (query.size == 0) null.asInstanceOf[T] else query.single
     if (e != null) {
       Option(e)
     } else {
@@ -165,12 +85,50 @@ abstract class RepositoryBase[K, T <: IEntity[K]]()(implicit manifestT: Manifest
     }
   }
 
-  def save(entity: T): Boolean = schema.using {
-    table.insert(entity) != null
+  def page(whereClauseFunctor: T => LogicalBoolean, orderByFunctor: T => ExpressionNode)(pageIndex: Int, pageSize: Int)(implicit dsl: QueryDsl): List[T] = inTransaction(schema.sessionfactory) {
+    val query = from(repo)(e =>
+      where(whereClauseFunctor(e))
+        select (e)
+        orderBy (orderByFunctor(e))
+    ).page((pageIndex - 1) * pageSize, pageSize)
+    logger.debug(query.statement)
+    query.toList
   }
 
-  def update(entity: T) = schema.using {
-    table.update(entity)
-    this
+  def save(entity: T) = inTransaction(schema.sessionfactory) {
+    table.insertOrUpdate(entity)
   }
+
+  def update(entity: T) = inTransaction(schema.sessionfactory) {
+    table.update(entity)
+  }
+}
+
+object Repository {
+  private var concreteTables: Set[AdapterTableComponent[_, _]] = Set()
+  private var concreteFactory: Map[EntityDatabaseAdapter, EntitySchema] = Map[EntityDatabaseAdapter, EntitySchema]()
+
+  def getOrCreateSchema(adapter: EntityDatabaseAdapter): EntitySchema = {
+    val filters = concreteFactory.filter(x => x._1 == adapter)
+    if (filters.size > 0) {
+      filters.head._2
+    } else {
+      val schema = EntitySchema(adapter)
+      concreteFactory += (adapter -> schema)
+      schema
+    }
+  }
+
+  def getOrCreateTable[K, T <: IEntity[K]](adapter: EntityDatabaseAdapter, manifest: Manifest[T])(el: => Table[T]): Table[T] = {
+    val filters = concreteTables.filter(x => x.adapter == adapter && x.manifest == manifest)
+    if (filters.size > 0)
+      filters.head.table.asInstanceOf[Table[T]]
+    else {
+      val table = el
+      concreteTables += AdapterTableComponent[K, T](adapter, manifest, table)
+      table
+    }
+  }
+
+  case class AdapterTableComponent[K, T <: IEntity[K]](adapter: EntityDatabaseAdapter, manifest: Manifest[T], table: Table[T])
 }
