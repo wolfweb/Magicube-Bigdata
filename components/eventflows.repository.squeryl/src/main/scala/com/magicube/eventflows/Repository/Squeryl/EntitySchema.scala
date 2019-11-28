@@ -14,9 +14,9 @@ case class EntitySchema(adapter: EntityDatabaseAdapter) extends Schema {
 
   def dataSource: ComboPooledDataSource = adapter.DataSource
 
-  def Table[T <: IEntity[_]]()(implicit manifestT: Manifest[T]): Table[T] = super.table()
+  def Table[T <: IEntity[_]]()(implicit manifestT: Manifest[T], ked: OptionalKeyedEntityDef[T, _]): Table[T] = super.table()
 
-  def Table[T <: IEntity[_]](name: String)(implicit manifestT: Manifest[T]): Table[T] = super.table(name)
+  def Table[T <: IEntity[_]](name: String)(implicit manifestT: Manifest[T], ked: OptionalKeyedEntityDef[T, _]): Table[T] = super.table(name)
 
   val sessionfactory = new SessionFactory {
     override def newSession: Session = createSession
@@ -27,12 +27,12 @@ case class EntitySchema(adapter: EntityDatabaseAdapter) extends Schema {
     Session.create(dataSource.getConnection, adapter.adapter)
   }
 
-  override def drop() = inTransaction {
+  override def drop() = inTransaction(sessionfactory) {
     logger.debug(s"Drop:$schemaName")
     super.drop
   }
 
-  override def create() = inTransaction {
+  override def create() = inTransaction(sessionfactory) {
     logger.debug(s"Create:$schemaName")
     printDdl
     super.create

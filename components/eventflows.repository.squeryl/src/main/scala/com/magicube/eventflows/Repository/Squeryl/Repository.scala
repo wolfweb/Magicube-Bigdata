@@ -5,6 +5,7 @@ import org.squeryl.PrimitiveTypeMode._
 import org.squeryl._
 import org.squeryl.dsl._
 import org.squeryl.dsl.ast._
+
 import scala.collection.mutable.{Map, Set}
 
 case class Repository[K, T <: IEntity[K]](adapter: EntityDatabaseAdapter, tbName: String = null)(implicit manifestT: Manifest[T]) {
@@ -16,7 +17,7 @@ case class Repository[K, T <: IEntity[K]](adapter: EntityDatabaseAdapter, tbName
 
   def tableName: String = table.name
 
-  def table: Table[T] = Repository.getOrCreateTable[K, T](adapter, manifestT) {
+  def table: Table[T] = Repository.getOrCreateTable[K, T](tbName, adapter, manifestT) {
     if (tbName != null)
       schema.Table[T](tbName)
     else
@@ -122,16 +123,17 @@ object Repository {
     }
   }
 
-  def getOrCreateTable[K, T <: IEntity[K]](adapter: EntityDatabaseAdapter, manifest: Manifest[T])(el: => Table[T]): Table[T] = {
-    val filters = concreteTables.filter(x => x.adapter == adapter && x.manifest == manifest)
+  def getOrCreateTable[K, T <: IEntity[K]](tbName: String, adapter: EntityDatabaseAdapter, manifest: Manifest[T])(el: => Table[T]): Table[T] = {
+    val filters = concreteTables.filter(x => x.tbName == tbName && x.adapter == adapter && x.manifest == manifest)
     if (filters.nonEmpty)
       filters.head.table.asInstanceOf[Table[T]]
     else {
       val table = el
-      concreteTables += AdapterTableComponent[K, T](adapter, manifest, table)
+      concreteTables += AdapterTableComponent[K, T](tbName, adapter, manifest, table)
       table
     }
   }
 
-  case class AdapterTableComponent[K, T <: IEntity[K]](adapter: EntityDatabaseAdapter, manifest: Manifest[T], table: Table[T])
+  case class AdapterTableComponent[K, T <: IEntity[K]](tbName: String, adapter: EntityDatabaseAdapter, manifest: Manifest[T], table: Table[T])
+
 }

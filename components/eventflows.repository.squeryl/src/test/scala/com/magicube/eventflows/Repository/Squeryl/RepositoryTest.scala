@@ -22,7 +22,7 @@ class RepositoryTest {
   def func_rep_performance_test(): Unit = {
     for (i <- 0 to 10000) {
       val rep = Repository[Long, Foo](remoteAdapter, "demo")
-      val entity = rep.first(x => x.Id === 10, x => x.Id desc)
+      val entity = rep.first(x => x.id === 10, x => x.id desc)
       assert(entity == None)
     }
   }
@@ -37,26 +37,32 @@ class RepositoryTest {
       remoteRep.create(Foo(UUID.randomUUID().toString, DateTime.now))
     }
 
-    var entity = localRep.first(x => x.Id gt 0, x => x.Id desc)
+    var entity = localRep.first(x => x.id gt 0, x => x.id desc)
     assert(entity != None)
-    entity = remoteRep.first(x => x.Id gt 0, x => x.Id desc)
+    entity.get.Name = DateTime.now.toString("yyyy/MM/dd HH:mm:ss")
+    localRep.update(entity.get)
+
+    entity = remoteRep.first(x => x.id gt 0, x => x.id desc)
     assert(entity != None)
+    entity.get.Name = DateTime.now.toString("yyyy/MM/dd HH:mm:ss")
+    remoteRep.update(entity.get)
 
     entity = localRep.findById(10)
-    assert(entity==None)
+    assert(entity == None)
 
     entity = remoteRep.findById(10)
-    assert(entity==None)
-
-    entity = localRep.first(x => x.Id === 10, x => x.Id desc)
-    assert(entity == None)
-    entity = remoteRep.first(x => x.Id === 10, x => x.Id desc)
     assert(entity == None)
 
-    var res = localRep.page(x => x.id gt 0, x => x.Id desc)(1, 10)
+    entity = localRep.first(x => x.id === 10, x => x.id desc)
+    assert(entity == None)
+
+    entity = remoteRep.first(x => x.id === 10, x => x.id desc)
+    assert(entity == None)
+
+    var res = localRep.page(x => x.id gt 0, x => x.id desc)(1, 10)
     assert(res.size == 10)
 
-    res = remoteRep.page(x => x.id gt 0, x => x.Id desc)(1, 10)
+    res = remoteRep.page(x => x.id gt 0, x => x.id desc)(1, 10)
     assert(res.size == 10)
   }
 }
@@ -65,7 +71,6 @@ case class Foo
 (
   var Name: String,
   CreateAt: Timestamp,
-  var Id: Long = 0
+  var id: Long = 0
 ) extends EntityBase {
-  override def id: Long = Id
 }
