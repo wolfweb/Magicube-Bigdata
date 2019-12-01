@@ -13,16 +13,16 @@ case class Repository[K, T <: IEntity[K]](adapter: EntityDatabaseAdapter, tbName
 
   val schema: EntitySchema = Repository.getOrCreateSchema(adapter)
 
-  def schemaName: String = schema.schemaName
+  val schemaName: String = schema.schemaName
 
-  def tableName: String = table.name
-
-  def table: Table[T] = Repository.getOrCreateTable[K, T](tbName, adapter, manifestT) {
+  val table: Table[T] = Repository.getOrCreateTable[K, T](tbName, adapter, manifestT) {
     if (tbName != null)
       schema.Table[T](tbName)
     else
       schema.Table[T]()
   }
+
+  def tableName: String = table.name
 
   def repo: Table[T] = this.table
 

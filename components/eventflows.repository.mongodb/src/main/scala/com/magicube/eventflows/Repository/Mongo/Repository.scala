@@ -1,8 +1,9 @@
 package com.magicube.eventflows.Repository.Mongo
 
+import org.slf4j.LoggerFactory
 import reactivemongo.api.commands.{MultiBulkWriteResult, WriteConcern, WriteResult}
 import reactivemongo.api.indexes.Index
-import reactivemongo.api.{Cursor,QueryOpts, ReadPreference}
+import reactivemongo.api.{Cursor, QueryOpts, ReadPreference}
 import reactivemongo.bson._
 import reactivemongo.core.errors.GenericDatabaseException
 
@@ -22,6 +23,7 @@ abstract class Repository[T: ClassTag, K <: BSONValue]
   private implicit val entityReaderImplicit = entityReader
   private implicit val entityWriterImplicit = entityWriter
 
+  protected val logger = LoggerFactory.getLogger(getClass.getName)
   protected val Id = "_id"
   protected val DuplicateKeyError = "E11000"
 
@@ -41,7 +43,9 @@ abstract class Repository[T: ClassTag, K <: BSONValue]
 
   def find(selector: BSONDocument, readPreference: ReadPreference): Future[List[T]] = find(selector, None, BSONDocument.empty, Some(readPreference))
 
-  def find(selector: BSONDocument, opt: QueryOpt, sorting: BSONDocument, readPreference: ReadPreference): Future[List[T]] = find(selector, Some(opt), BSONDocument.empty, Some(readPreference))
+  def find(selector: BSONDocument, opt: QueryOpt, sorting: BSONDocument, readPreference: ReadPreference): Future[List[T]] = {
+    find(selector, Some(opt), BSONDocument.empty, Some(readPreference))
+  }
 
   def find(selector: BSONDocument, opt: Option[QueryOpt] = None, sorting: BSONDocument, readPreference: Option[ReadPreference]): Future[List[T]] = {
     val (skip, limit) = opt.map(opt => (opt.offset, opt.limit)).getOrElse((0, Int.MaxValue))
@@ -49,7 +53,7 @@ abstract class Repository[T: ClassTag, K <: BSONValue]
 
     for {
       instance <- collection.instance()
-      result <- instance.find(selector).options(QueryOpts(skip, limit)).sort(sorting).cursor[T](rp).collect[List](limit, Cursor.FailOnError[List[T]]())
+      result <- instance.find(selector, Some(BSONDocument.empty)).options(QueryOpts(skip, limit)).sort(sorting).cursor[T](rp).collect[List](limit, Cursor.FailOnError[List[T]]())
     } yield result
   }
 
@@ -57,30 +61,38 @@ abstract class Repository[T: ClassTag, K <: BSONValue]
 
   def findAll(opt: QueryOpt, sorting: BSONDocument, readPreference: ReadPreference): Future[List[T]] = findAll(Some(opt), sorting, Some(readPreference))
 
-  def findAll(opt: Option[QueryOpt] = None, sorting: BSONDocument = BSONDocument.empty, readPreference: Option[ReadPreference] = None): Future[List[T]] = find(BSONDocument.empty, opt, sorting, readPreference)
+  def findAll(opt: Option[QueryOpt] = None, sorting: BSONDocument = BSONDocument.empty, readPreference: Option[ReadPreference] = None): Future[List[T]] = {
+    find(BSONDocument.empty, opt, sorting, readPreference)
+  }
 
   def findById(id: K): Future[Option[T]] = findById(id, None)
 
   def findById(id: K, readPreference: Option[ReadPreference]): Future[Option[T]] = findOne($id(id), None)
 
-  def findById(id: K, projection: Option[BSONDocument], readPreference: Option[ReadPreference] = None): Future[Option[BSONDocument]] = findOne($id(id), projection, readPreference)
+  def findById(id: K, projection: Option[BSONDocument], readPreference: Option[ReadPreference] = None): Future[Option[BSONDocument]] = {
+    findOne($id(id), projection, readPreference)
+  }
 
-  def findOne(query: BSONDocument, readPreference: Option[ReadPreference]): Future[Option[T]] = for {
-    instance <- collection.instance()
-    result <- instance.find(query, Some(BSONDocument.empty)).one[T](readPreference.getOrElse(defaultReadPreference))
-  } yield result
+  def findOne(query: BSONDocument, readPreference: Option[ReadPreference]): Future[Option[T]] = {
+    for {
+      instance <- collection.instance()
+      result <- instance.find(query, Some(BSONDocument.empty)).one[T](readPreference.getOrElse(defaultReadPreference))
+    } yield result
+  }
 
-  def findOne(query: BSONDocument, projection: Option[BSONDocument], readPreference: Option[ReadPreference] = None): Future[Option[BSONDocument]] =
+  def findOne(query: BSONDocument, projection: Option[BSONDocument], readPreference: Option[ReadPreference] = None): Future[Option[BSONDocument]] = {
     for {
       instance <- collection.instance()
       result <- instance.find(query, projection).one[BSONDocument](readPreference.getOrElse(defaultReadPreference))
     } yield result
+  }
 
-  def count: Future[Int] =
+  def count: Future[Int] ={
     for {
       instance <- collection.instance()
       result <- instance.count(None)
     } yield result
+  }
 
   def count(opt: QueryOpt): Future[Int] = count(None, Some(opt))
 
@@ -100,29 +112,33 @@ abstract class Repository[T: ClassTag, K <: BSONValue]
 
   def removeById(id: K, writeConcern: WriteConcern = WriteConcern.Default): Future[OperationSuccess.type] = remove($id(id), writeConcern)
 
-  def remove(selector: BSONDocument, writeConcern: WriteConcern = WriteConcern.Default): Future[OperationSuccess.type] =
+  def remove(selector: BSONDocument, writeConcern: WriteConcern = WriteConcern.Default): Future[OperationSuccess.type] = {
     for {
       instance <- collection.instance()
       result <- track(instance.remove(selector, writeConcern))
     } yield result
+  }
 
-  def drop: Future[Boolean] =
+  def drop: Future[Boolean] = {
     for {
       instance <- collection.instance()
       result <- instance.drop(false)
     } yield result
+  }
 
-  def insert(entity: T, writeConcern: WriteConcern = WriteConcern.Default): Future[T] =
+  def insert(entity: T, writeConcern: WriteConcern = WriteConcern.Default): Future[T] = {
     for {
       instance <- collection.instance()
       result <- track(entity, instance.insert(_: T, writeConcern))
     } yield result
+  }
 
-  def bulkInsert(entities: Traversable[T]): Future[MultiBulkWriteResult] =
+  def bulkInsert(entities: Traversable[T]): Future[MultiBulkWriteResult] ={
     for {
       instance <- collection.instance()
       result <- instance.insert(true).many(entities.map(entityWriter.write(_)).toIterable)
     } yield result
+  }
 
   def updateById(id: K, entity: T): Future[Option[T]] = updateBy($id(id), entity)
 
@@ -140,11 +156,12 @@ abstract class Repository[T: ClassTag, K <: BSONValue]
       result <- instance.findAndModify(selector, instance.updateModifier(modifier, true)).map(_.value)
     } yield result.map(_.as[T])
 
-  private def ensureIndex(index: Index): Future[OperationSuccess.type] =
+  private def ensureIndex(index: Index): Future[OperationSuccess.type] ={
     for {
       instance <- collection.instance()
       result <- track(instance.indexesManager.create(index))
     } yield result
+  }
 
   def ensureIndexes: Future[Boolean] = {
     for {
@@ -152,17 +169,17 @@ abstract class Repository[T: ClassTag, K <: BSONValue]
       pendingIdxs <- instance.indexesManager(ec).list().map(idxs => {
         val currentIdx = idxs.map(_.name).flatten
         val pendingIdxs = indexes.filter { newIdx => !currentIdx.contains(newIdx.name.get) }
-        println(s"Current idxs: ${currentIdx.mkString(", ")}")
-        println(s"Pending idxs: ${pendingIdxs.map(idx => idx.name.getOrElse(idx)).mkString(", ")}")
+        logger(s"Current idxs: ${currentIdx.mkString(", ")}")
+        logger(s"Pending idxs: ${pendingIdxs.map(idx => idx.name.getOrElse(idx)).mkString(", ")}")
         pendingIdxs
       })
       insertedIdx <- Future.sequence {
         pendingIdxs.map(idx =>
           ensureIndex(idx).andThen {
             case Success(result) =>
-              println(s"Index ${idx.name.getOrElse(idx)} inserted")
+              logger(s"Index ${idx.name.getOrElse(idx)} inserted")
             case Failure(ex) =>
-              println(s"Index ${idx.name.getOrElse(idx)} fail", ex)
+              logger(s"Index ${idx.name.getOrElse(idx)} fail", ex)
           })
       }
     } yield insertedIdx.forall(_ == OperationSuccess)
@@ -177,7 +194,7 @@ abstract class Repository[T: ClassTag, K <: BSONValue]
       case wr if wr.ok =>
         Future.successful(entity)
       case wr =>
-        Future.failed(new GenericDatabaseException(wr.writeErrors.map(_.errmsg).mkString(", "), wr.code))
+        Future.failed(GenericDatabaseException(wr.writeErrors.map(_.errmsg).mkString(", "), wr.code))
     }
 
   private def track(cmd: Future[WriteResult])(implicit ec: ExecutionContext): Future[OperationSuccess.type] =
@@ -187,6 +204,6 @@ abstract class Repository[T: ClassTag, K <: BSONValue]
       case wr if wr.ok =>
         Future.successful(OperationSuccess)
       case wr =>
-        Future.failed(new GenericDatabaseException(wr.writeErrors.map(_.errmsg).mkString(", "), wr.code))
+        Future.failed(GenericDatabaseException(wr.writeErrors.map(_.errmsg).mkString(", "), wr.code))
     }
 }
