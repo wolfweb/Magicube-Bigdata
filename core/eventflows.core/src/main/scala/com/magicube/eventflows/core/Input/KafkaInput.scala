@@ -1,5 +1,6 @@
 package com.magicube.eventflows.core.Input
 
+import java.nio.charset.StandardCharsets
 import java.util
 import java.util.Properties
 
@@ -11,8 +12,9 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.TypeExtractor
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper
 import org.apache.flink.streaming.api.scala._
-import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, KafkaDeserializationSchema, FlinkKafkaConsumer09}
+import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, FlinkKafkaConsumer09, KafkaDeserializationSchema}
 import org.apache.kafka.clients.consumer.ConsumerRecord
+
 import scala.collection.JavaConverters._
 
 case class KafkaInputConf
@@ -70,8 +72,8 @@ class KafkaInputDeserializationSchema() extends KafkaDeserializationSchema[Input
     hashMap.put("partition", record.partition())
     val messageKey = record.key()
     if (messageKey != null)
-      hashMap.put("key", mapper.readValue(messageKey, classOf[String]))
-    InputRawData(mapper.readValue(record.value(), classOf[String]), hashMap)
+      hashMap.put("key", messageKey)
+    InputRawData(new String(record.value(), StandardCharsets.UTF_8), hashMap)
   }
 
   override def getProducedType: TypeInformation[InputRawData] = TypeExtractor.getForClass(classOf[InputRawData])

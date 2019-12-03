@@ -169,17 +169,17 @@ abstract class Repository[T: ClassTag, K <: BSONValue]
       pendingIdxs <- instance.indexesManager(ec).list().map(idxs => {
         val currentIdx = idxs.map(_.name).flatten
         val pendingIdxs = indexes.filter { newIdx => !currentIdx.contains(newIdx.name.get) }
-        logger(s"Current idxs: ${currentIdx.mkString(", ")}")
-        logger(s"Pending idxs: ${pendingIdxs.map(idx => idx.name.getOrElse(idx)).mkString(", ")}")
+        logger.debug(s"Current idxs: ${currentIdx.mkString(", ")}")
+        logger.debug(s"Pending idxs: ${pendingIdxs.map(idx => idx.name.getOrElse(idx)).mkString(", ")}")
         pendingIdxs
       })
       insertedIdx <- Future.sequence {
         pendingIdxs.map(idx =>
           ensureIndex(idx).andThen {
             case Success(result) =>
-              logger(s"Index ${idx.name.getOrElse(idx)} inserted")
+              logger.debug(s"Index ${idx.name.getOrElse(idx)} inserted")
             case Failure(ex) =>
-              logger(s"Index ${idx.name.getOrElse(idx)} fail", ex)
+              logger.debug(s"Index ${idx.name.getOrElse(idx)} fail", ex)
           })
       }
     } yield insertedIdx.forall(_ == OperationSuccess)

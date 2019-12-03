@@ -3,6 +3,7 @@ package com.magicube.eventflows.host
 import com.magicube.eventflows.Env.AppComponent
 import com.magicube.eventflows.host.Env.CommandArgs
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
+import org.apache.flink.runtime.state.filesystem.FsStateBackend
 import org.apache.flink.streaming.api.environment.CheckpointConfig.ExternalizedCheckpointCleanup
 import org.apache.flink.streaming.api.{CheckpointingMode, TimeCharacteristic}
 import org.apache.flink.streaming.api.scala._
@@ -31,6 +32,8 @@ object Application {
       return
     }
 
+    val currentDirectory = new java.io.File(".").getCanonicalPath
+
     val env = StreamExecutionEnvironment.getExecutionEnvironment
     env.enableCheckpointing(1000)
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
@@ -42,7 +45,7 @@ object Application {
     env.getCheckpointConfig.setMaxConcurrentCheckpoints(1)
     env.getCheckpointConfig.enableExternalizedCheckpoints(ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION)
 
-    //env.setStateBackend
+    env.setStateBackend(new FsStateBackend(s"file:///$currentDirectory/checkpoints"))
 
     try {
       val service: AppComponent = Class.forName(s"com.magicube.eventflows.host.Apps.${appName}.${appName}Service").newInstance().asInstanceOf[AppComponent]

@@ -2,12 +2,13 @@ package com.magicube.eventflows.flinkkafka
 
 import java.util.Properties
 
+import com.magicube.eventflows.Kafka.KafkaOffsetStorage
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer09
 
-class Kafka09Service[T <: IKafkaEvent](broker: String, group: String, topics: java.util.List[String]) {
+class Kafka09Service[T <: IKafkaEvent](broker: String, group: String, topics: java.util.List[String], offsetService: KafkaOffsetStorage) {
   private val _group = group
   private val _broker = broker
   private val _topics = topics
@@ -29,8 +30,13 @@ class Kafka09Service[T <: IKafkaEvent](broker: String, group: String, topics: ja
 
     val kafkaConsumer = new FlinkKafkaConsumer09[ObjectNode](_topics, new JsonDeserializationSchema, kafkaProperties)
 
-    kafkaConsumer.setStartFromGroupOffsets()
-    //kafkaConsumer.setStartFromEarliest()
+    val offsets = offsetService.getTopicWithOffset()
+    if (offsets != None) {
+      kafkaConsumer.setStartFromSpecificOffsets(offsets.get)
+    } else {
+      kafkaConsumer.setStartFromGroupOffsets()
+      //kafkaConsumer.setStartFromEarliest()
+    }
 
     val stream = env.addSource(kafkaConsumer)
     popularSpots = stream.map(dataFormatHandler).assignTimestampsAndWatermarks(KafkaEventTimestampAndWatermarkHandler[T](maxOutOfOrderness))
