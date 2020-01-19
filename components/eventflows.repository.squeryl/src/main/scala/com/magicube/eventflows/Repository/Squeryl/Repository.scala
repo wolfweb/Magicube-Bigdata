@@ -124,12 +124,16 @@ object Repository {
   }
 
   def getOrCreateTable[K, T <: IEntity[K]](tbName: String, adapter: EntityDatabaseAdapter, manifest: Manifest[T])(el: => Table[T]): Table[T] = {
-    val filters = concreteTables.filter(x => x.tbName == tbName && x.adapter == adapter && x.manifest == manifest)
+    var tableName = tbName
+    if(tableName == null)
+      tableName = manifest.getClass.getSimpleName
+
+    val filters = concreteTables.filter(x => x.tbName == tableName && x.adapter == adapter && x.manifest == manifest)
     if (filters.nonEmpty)
       filters.head.table.asInstanceOf[Table[T]]
     else {
       val table = el
-      concreteTables += AdapterTableComponent[K, T](tbName, adapter, manifest, table)
+      concreteTables += AdapterTableComponent[K, T](tableName, adapter, manifest, table)
       table
     }
   }
