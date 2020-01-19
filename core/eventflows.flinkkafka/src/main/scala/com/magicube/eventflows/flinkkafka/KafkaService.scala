@@ -3,6 +3,7 @@ package com.magicube.eventflows.flinkkafka
 import java.util.Properties
 
 import com.magicube.eventflows.Kafka.KafkaOffsetStorage
+import org.apache.flink.api.common.functions.FilterFunction
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode
 import org.apache.flink.streaming.api.scala._
@@ -38,7 +39,9 @@ class KafkaService[T <: IKafkaEvent](broker: String, group: String, topics: java
     }
 
     val stream = env.addSource(kafkaConsumer)
-    popularSpots = stream.map(dataFormatHandler).assignTimestampsAndWatermarks(KafkaEventTimestampAndWatermarkHandler[T](maxOutOfOrderness))
+    popularSpots = stream.map(dataFormatHandler).filter(new FilterFunction[T] {
+      override def filter(t: T): Boolean = t != null
+    }).assignTimestampsAndWatermarks(KafkaEventTimestampAndWatermarkHandler[T](maxOutOfOrderness))
     this
   }
 }

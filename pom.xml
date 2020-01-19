@@ -5,6 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.magicube</groupId>
     <artifactId>eventflows</artifactId>
+    <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
     <modules>
         <module>core/eventflows.infrastructure</module>
@@ -14,6 +15,7 @@
         <module>components/eventflows.quartz</module>
         <module>components/eventflows.repository</module>
         <module>components/eventflows.redis</module>
+        <module>components/eventflows.useragent</module>
         <module>components/eventflows.repository.mongodb</module>
         <module>components/eventflows.repository.squeryl</module>
         <module>apps/eventflows.host</module>
@@ -172,6 +174,12 @@
                 <groupId>com.github.scopt</groupId>
                 <artifactId>scopt_${scala.version}</artifactId>
                 <version>${scopt.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>nl.basjes.parse.useragent</groupId>
+                <artifactId>yauaa</artifactId>
+                <version>5.14.1</version>
             </dependency>
 
             <dependency>

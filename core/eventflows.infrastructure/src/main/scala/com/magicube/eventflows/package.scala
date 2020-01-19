@@ -10,13 +10,17 @@ import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 import org.json4s.DefaultFormats
 
+import scala.annotation.StaticAnnotation
+import scala.reflect.runtime.universe._
+import scala.collection.mutable.ListBuffer
+
 import scala.util.matching.Regex
 
 package object eventflows {
   val dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
 
   implicit def toDateTime(v: String) = {
-    val pattern = extractDataPattern(v)
+    val pattern = extractDatePattern(v)
     DateTime.parse(v, DateTimeFormat.forPattern(pattern))
   }
 
@@ -43,7 +47,37 @@ package object eventflows {
     def readAs[T: Manifest] = deserialize[T](readAsString, DefaultFormats)
   }
 
-  private def extractDataPattern(v: String): String = {
+  def getAnnotations[T <: StaticAnnotation](tpe: Type, cls: Class[_]): List[T] = {
+    val mirror = runtimeMirror(cls.getClassLoader)
+    val annotations = tpe.typeSymbol.annotations
+
+    val res = ListBuffer[T]()
+    for (annt <- annotations) {
+      val anntCls = annt.tree.tpe.typeSymbol.asClass
+      val classMirror = mirror.reflectClass(anntCls);
+      val anntType = annt.tree.tpe
+      val constructor = anntType.decl(termNames.CONSTRUCTOR).asMethod;
+      val constructorMirror = classMirror.reflectConstructor(constructor);
+
+      val instance = annt.tree match {
+        case Apply(c, args: List[Tree]) =>
+          val res = args.collect({
+            case i: Tree =>
+              i match {
+                case Literal(Constant(value)) =>
+                  value
+              }
+          })
+          constructorMirror(res: _*).asInstanceOf[T]
+      }
+
+
+      res += (instance)
+    }
+    res.toList
+  }
+
+  private def extractDatePattern(v: String): String = {
     val reg = new Regex("(\\d+)([/\\-]+)(\\d+)([/\\-]+)(\\d+)([T\\s]+)(\\d+)(:)(\\d+)(:)(\\d+)([\\.\\d+]*)(Z*)")
     val m = reg.findFirstMatchIn(v)
     val groups = m.get.subgroups.toList
