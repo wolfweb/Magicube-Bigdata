@@ -179,7 +179,7 @@
             <dependency>
                 <groupId>nl.basjes.parse.useragent</groupId>
                 <artifactId>yauaa</artifactId>
-                <version>5.14.1</version>
+                <version>5.15</version>
             </dependency>
 
             <dependency>
@@ -194,15 +194,15 @@
     <properties>
         <java.version>1.8</java.version>
         <email.version>1.5</email.version>
-        <junit.version>4.13-beta-3</junit.version>
+        <junit.version>4.13</junit.version>
         <scala.version>2.12</scala.version>
         <scopt.version>3.7.1</scopt.version>
         <curly.version>0.5.6</curly.version>
         <ficus.version>1.4.7</ficus.version>
-        <jedis.version>3.1.0</jedis.version>
-        <flink.version>1.9.1</flink.version>
-        <mysql.version>8.0.18</mysql.version>
-        <slf4j.version>1.7.29</slf4j.version>
+        <jedis.version>3.2.0</jedis.version>
+        <flink.version>1.10.0</flink.version>
+        <mysql.version>8.0.19</mysql.version>
+        <slf4j.version>1.7.30</slf4j.version>
         <quartz.version>2.3.2</quartz.version>
         <json4s.version>3.6.7</json4s.version>
         <logback.version>1.2.3</logback.version>
@@ -210,7 +210,7 @@
         <typesafe.version>1.4.0</typesafe.version>
         <querydsl.version>4.2.1</querydsl.version>
         <jodatime.version>2.10.5</jodatime.version>
-        <httpclient.version>2.10.4</httpclient.version>
+        <httpclient.version>2.11.0</httpclient.version>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
