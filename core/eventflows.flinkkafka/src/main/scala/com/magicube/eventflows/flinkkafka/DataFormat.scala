@@ -1,5 +1,6 @@
 package com.magicube.eventflows.flinkkafka
 
+import com.magicube.eventflows.Kafka.KafkaOffsetStorage
 import org.apache.flink.api.common.functions.MapFunction
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode
 import org.slf4j.LoggerFactory
@@ -11,7 +12,7 @@ abstract class DataFormat[T <: IKafkaEvent]() extends MapFunction[ObjectNode, T]
   }
 }
 
-case class KafkaDataFormat[T <: IKafkaEvent](func: (String, Int, Long, String) => T) extends DataFormat[T] {
+case class KafkaDataFormat[T <: IKafkaEvent](func: (String, Int, Long, String) => T, offsetService: KafkaOffsetStorage) extends DataFormat[T] {
   override def map(t: ObjectNode): T = {
     val topic = t.get("topic").asText
     val value = t.get("value").toString
