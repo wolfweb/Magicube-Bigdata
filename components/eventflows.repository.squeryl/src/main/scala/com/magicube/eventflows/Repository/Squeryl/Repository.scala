@@ -30,6 +30,10 @@ case class Repository[K, T <: IEntity[K]](adapter: EntityDatabaseAdapter, tbName
     table.insert(entity)
   }
 
+  def create(entities: Iterable[T]) = inTransaction(schema.sessionfactory){
+    table.insert(entities)
+  }
+
   def delete(id: K)(implicit toCanLookup: K => CanLookup): Boolean = inTransaction(schema.sessionfactory) {
     table.delete(id)
   }

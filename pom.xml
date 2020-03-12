@@ -169,11 +169,32 @@
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.squeryl</groupId>
+                <artifactId>squeryl_${scala.version}</artifactId>
+                <version>0.9.14</version>
+            </dependency>
+            <dependency>
+                <groupId>com.mchange</groupId>
+                <artifactId>c3p0</artifactId>
+                <version>0.9.5.4</version>
+            </dependency>
 
             <dependency>
                 <groupId>com.github.scopt</groupId>
                 <artifactId>scopt_${scala.version}</artifactId>
                 <version>${scopt.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.searchbox</groupId>
+                <artifactId>jest</artifactId>
+                <version>6.3.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.elasticsearch</groupId>
+                <artifactId>elasticsearch</artifactId>
+                <version>6.8.7</version>
             </dependency>
 
             <dependency>

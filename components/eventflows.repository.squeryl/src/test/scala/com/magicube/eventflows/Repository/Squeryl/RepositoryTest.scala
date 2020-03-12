@@ -7,6 +7,7 @@ import org.squeryl.PrimitiveTypeMode._
 import com.magicube.eventflows._
 import org.joda.time.DateTime
 import org.junit.Test
+import scala.collection.mutable.Set
 
 class RepositoryTest {
   val localAdapter = MySql("jdbc:mysql://192.168.10.251:3306/demo?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8", "root", "123456")
@@ -20,18 +21,23 @@ class RepositoryTest {
 
   @Test
   def func_rep_schema_test():Unit={
-    val rep = Repository[Long, Foo](remoteAdapter, "foo")
-    rep.schema.drop
-    rep.schema.create
+    remoteRep.schema.drop
+    remoteRep.schema.create
   }
 
   @Test
   def func_rep_performance_test(): Unit = {
+    val set = Set[Foo]()
     for (i <- 0 to 100000) {
-      val rep = Repository[Long, Foo](remoteAdapter, "foo")
-      val entity = rep.first(x => x.id === 10, x => x.id desc)
-      assert(entity == None)
+      if(i % 200 ==0){
+        remoteRep.create(set)
+        set.clear()
+      }else{
+        set +=  Foo(UUID.randomUUID().toString, DateTime.now)
+      }
     }
+    val entity = remoteRep.first(x => x.id === 10, x => x.id desc)
+    assert(entity != None)
   }
 
   @Test
@@ -39,7 +45,7 @@ class RepositoryTest {
     //localRep.deleteAll()
     remoteRep.deleteAll()
 
-    for (step <- 1 to 1000) {
+    for (step <- 1 to 10) {
       //localRep.create(Foo(UUID.randomUUID().toString, DateTime.now))
       remoteRep.create(Foo(UUID.randomUUID().toString, DateTime.now))
     }
@@ -57,13 +63,13 @@ class RepositoryTest {
     //entity = localRep.findById(10)
     //assert(entity == None)
 
-    entity = remoteRep.findById(10)
+    entity = remoteRep.findById(0)
     assert(entity == None)
 
     //entity = localRep.first(x => x.id === 10, x => x.id desc)
     //assert(entity == None)
 
-    entity = remoteRep.first(x => x.id === 10, x => x.id desc)
+    entity = remoteRep.first(x => x.id === 0, x => x.id desc)
     assert(entity == None)
 
     //var res = localRep.page(x => x.id gt 0, x => x.id desc)(1, 10)
