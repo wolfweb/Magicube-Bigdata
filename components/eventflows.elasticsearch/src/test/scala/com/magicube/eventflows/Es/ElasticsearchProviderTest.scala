@@ -45,4 +45,56 @@ class ElasticsearchProviderTest {
     queryResult = elastic.elastic.query(Map[String, String]("_id" -> foo.$id))
     assert(queryResult == null || queryResult.size == 0)
   }
+
+  @Test
+  def func_elastic_create_with_multi_index: Unit = {
+    val count = 10
+    val elasticQuery = ElasticFunction(s"$index*", Array[String](url))
+
+    var all = elasticQuery.elastic.queryAll()
+
+    val elastic1 = ElasticFunction(s"$index-1", Array[String](url))
+    val elastic2 = ElasticFunction(s"$index-2", Array[String](url))
+
+    if (all.size > 0) {
+      for (it <- all) {
+        elasticQuery.elastic.deleteDocument(it)
+      }
+
+      all = elasticQuery.elastic.queryAll()
+      assert(all.size == 0)
+    }
+
+    for (i <- 1 to count) {
+      val foo = Foo(s"${UUID.randomUUID.toString}_$i", i)
+      if (i % 2 == 0) {
+        elastic2.create(foo)
+      } else {
+        elastic1.create(foo)
+      }
+    }
+
+    all = elasticQuery.elastic.queryAll()
+    assert(all.size == count)
+
+    for (i <- 1 to count) {
+      val it = elasticQuery.elastic.get(Map("age" -> i))
+      it.name = s"wolfweb_$i"
+      elasticQuery.elastic.updateDocument(it)
+    }
+
+    for (i <- 1 to count) {
+      val it = elasticQuery.elastic.get(Map("age" -> i))
+      assert(it.name.startsWith("wolfweb"))
+    }
+
+    for (i <- 1 to count) {
+      val it = elasticQuery.elastic.get(Map("age" -> i))
+      elasticQuery.elastic.deleteDocument(it)
+    }
+
+    all = elasticQuery.elastic.queryAll()
+    println(all.size)
+    assert(all.size == 0)
+  }
 }

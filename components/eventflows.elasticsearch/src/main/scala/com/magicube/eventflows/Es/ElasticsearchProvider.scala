@@ -10,7 +10,6 @@ import io.searchbox.core._
 import io.searchbox.indices._
 import org.elasticsearch.index.query.QueryBuilders
 import org.elasticsearch.search.builder.SearchSourceBuilder
-import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConversions._
 import scala.reflect.ClassTag
@@ -139,7 +138,7 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
 
   def updateDocument(t: T): JestResult = {
     val doc = Document(t)
-    val update = new Update.Builder(doc).index(conf.index).`type`(entityType).id(t.$id).refresh(true).build()
+    val update = new Update.Builder(doc).index(t.$index).`type`(entityType).id(t.$id).refresh(true).build()
     var result: JestResult = null
     try {
       result = client.execute(update)
@@ -150,10 +149,8 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     result
   }
 
-  def deleteDocument(t: T): JestResult = deleteDocument(t.$id)
-
-  def deleteDocument(id: String): JestResult = {
-    val delete = new Delete.Builder(id).index(conf.index).`type`(`entityType`).refresh(true).build
+  def deleteDocument(t: T): JestResult = {
+    val delete = new Delete.Builder(t.$id).index(t.$index).`type`(`entityType`).refresh(true).build
     var result: JestResult = null
     try {
       result = client.execute(delete)
@@ -164,7 +161,7 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     result
   }
 
-  def deleteDocumentByQuery(params:String): JestResult = {
+  def deleteDocumentByQuery(params: String): JestResult = {
     val query = new DeleteByQuery.Builder(params).addIndex(conf.index).addType(entityType).build()
     var result: JestResult = null
     try {
@@ -180,20 +177,24 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     val res = query(where)
     if (res.nonEmpty)
       res.head
-    else null.asInstanceOf
+    else null.asInstanceOf[T]
   }
 
-  def get(id: String): T = {
-    val get = new Get.Builder(conf.index, id).`type`(entityType).build()
+  def get(id: String, index: String): T = {
+    val get = new Get.Builder(index, id).`type`(entityType).build()
     var res: T = null.asInstanceOf[T]
     try {
       val result = client.execute(get)
       println(s"delete----------${result.getJsonString}")
-      res = result.getSourceAsObject(clasz).asInstanceOf[T]
+      res = result.getSourceAsObject(clasz)
     } catch {
       case e: IOException => e.printStackTrace
     }
     res
+  }
+
+  def get(id: String): T = {
+    get(id, conf.index)
   }
 
   def queryAll(): List[T] = {
@@ -206,7 +207,8 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
       val result = client.execute(search)
       list = result.getHits(clasz).map(x => {
         val it = x.source
-        it.$id = x.id.toString
+        it.$id = x.id
+        it.$index = x.index
         it
       }).toList
     } catch {
@@ -230,7 +232,8 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
       if (result.isSucceeded) {
         list = result.getHits(clasz).map(x => {
           val it = x.source
-          it.$id = x.id.toString
+          it.$id = x.id
+          it.$index = x.index
           it
         }).toList
       }
