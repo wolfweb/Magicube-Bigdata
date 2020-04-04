@@ -16,8 +16,6 @@ import scala.collection.JavaConversions._
 import scala.reflect.ClassTag
 
 case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf)(implicit clasz: Class[T]) extends Serializable {
-  protected val logger = LoggerFactory.getLogger(getClass.getName)
-
   val client: JestClient = {
     val factory = new JestClientFactory
     factory.setHttpClientConfig(new HttpClientConfig
@@ -29,13 +27,14 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     factory.getObject
   }
 
+  val entityType = clasz.getSimpleName
+
   def deleteIndex(): JestResult = {
-    val entityType = clasz.getSimpleName
-    val deleteIndex = new DeleteIndex.Builder(entityType).build()
+    val deleteIndex = new DeleteIndex.Builder(conf.index).build()
     var result: JestResult = null
     try {
       result = client.execute(deleteIndex)
-      logger.debug(s"deleteIndex----------${result.getJsonString}")
+      println(s"delete----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
@@ -47,7 +46,7 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     var result: JestResult = null
     try {
       result = client.execute(closeIndex)
-      logger.debug(s"clearCache----------${result.getJsonString}")
+      println(s"clearCache----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
@@ -55,12 +54,11 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
   }
 
   def closeIndex(): JestResult = {
-    val entityType = clasz.getSimpleName
     val closeIndex = new CloseIndex.Builder(entityType).build
     var result: JestResult = null
     try {
       result = client.execute(closeIndex)
-      logger.debug(s"closeIndex----------${result.getJsonString}")
+      println(s"close----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
@@ -72,7 +70,7 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     var result: JestResult = null
     try {
       result = client.execute(closeIndex)
-      logger.debug(s"optimizeIndex----------${result.getJsonString}")
+      println(s"optimize----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
@@ -84,7 +82,7 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     var result: JestResult = null
     try {
       result = client.execute(closeIndex)
-      logger.debug(s"flushIndex----------${result.getJsonString}")
+      println(s"flush----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
@@ -96,7 +94,7 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     var result: JestResult = null
     try {
       result = client.execute(closeIndex)
-      logger.debug(s"indicesExists----------${result.getJsonString}")
+      println(s"indicesExists----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
@@ -108,7 +106,7 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     var result: JestResult = null
     try {
       result = client.execute(closeIndex)
-      logger.debug(s"nodesInfo----------${result.getJsonString}")
+      println(s"nodesInfo----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
@@ -120,7 +118,7 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     var result: JestResult = null
     try {
       result = client.execute(closeIndex)
-      logger.debug(s"health----------${result.getJsonString}")
+      println(s"health----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
@@ -132,59 +130,65 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     var result: JestResult = null
     try {
       result = client.execute(closeIndex)
-      logger.debug(s"nodesStats----------${result.getJsonString}")
+      println(s"nodesStats----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
     result
   }
 
-  def updateDocument(doc: String, id: String): JestResult = {
-    val entityType = clasz.getSimpleName
-    val update = new Update.Builder(doc).index(conf.index).`type`(entityType).id(id).build()
+  def updateDocument(t: T): JestResult = {
+    val doc = Document(t)
+    val update = new Update.Builder(doc).index(conf.index).`type`(entityType).id(t.$id).refresh(true).build()
     var result: JestResult = null
     try {
       result = client.execute(update)
-      logger.debug(s"updateDocument----------${result.getJsonString}")
+      println(s"update----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
     result
   }
 
+  def deleteDocument(t: T): JestResult = deleteDocument(t.$id)
+
   def deleteDocument(id: String): JestResult = {
-    val entityType = clasz.getSimpleName
-    val delete = new Delete.Builder(id).index(conf.index).`type`(`entityType`).build
+    val delete = new Delete.Builder(id).index(conf.index).`type`(`entityType`).refresh(true).build
     var result: JestResult = null
     try {
       result = client.execute(delete)
-      logger.debug(s"deleteDocument----------${result.getJsonString}")
+      println(s"delete----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
     result
   }
 
-  def deleteDocumentByQuery(params: String): JestResult = {
-    val entityType = clasz.getSimpleName
-    var query = new DeleteByQuery.Builder(params).addIndex(conf.index).addType(entityType).build()
+  def deleteDocumentByQuery(params:String): JestResult = {
+    val query = new DeleteByQuery.Builder(params).addIndex(conf.index).addType(entityType).build()
     var result: JestResult = null
     try {
       result = client.execute(query)
-      logger.debug(s"deleteDocument----------${result.getJsonString}")
+      println(s"delete----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
     result
   }
 
-  def getDocument[T](id: String): T = {
-    val entityType = clasz.getSimpleName
+  def get(where: Map[String, Any]): T = {
+    val res = query(where)
+    if (res.nonEmpty)
+      res.head
+    else null.asInstanceOf
+  }
+
+  def get(id: String): T = {
     val get = new Get.Builder(conf.index, id).`type`(entityType).build()
     var res: T = null.asInstanceOf[T]
     try {
       val result = client.execute(get)
-      logger.debug(s"deleteDocument----------${result.getJsonString}")
+      println(s"delete----------${result.getJsonString}")
       res = result.getSourceAsObject(clasz).asInstanceOf[T]
     } catch {
       case e: IOException => e.printStackTrace
@@ -192,7 +196,7 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     res
   }
 
-  def queryAll[T](): List[T] = {
+  def queryAll(): List[T] = {
     val searchSourceBuilder = new SearchSourceBuilder
     searchSourceBuilder.query(QueryBuilders.matchAllQuery())
 
@@ -200,18 +204,22 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     var list: List[T] = null
     try {
       val result = client.execute(search)
-      list = result.getHits(clasz).map(x => x.source.asInstanceOf[T]).toList
+      list = result.getHits(clasz).map(x => {
+        val it = x.source
+        it.$id = x.id.toString
+        it
+      }).toList
     } catch {
       case e: IOException => e.printStackTrace
     }
     list
   }
 
-  def query[T](fields: Map[String, Any]): List[T] = {
+  def query(where: Map[String, Any]): List[T] = {
     val searchSourceBuilder = new SearchSourceBuilder
     var query = QueryBuilders.boolQuery()
 
-    for (field <- fields) {
+    for (field <- where) {
       query = query.filter(QueryBuilders.termQuery(field._1, field._2))
     }
     searchSourceBuilder.query(query)
@@ -220,7 +228,11 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     try {
       val result = client.execute(search)
       if (result.isSucceeded) {
-        list = result.getHits(clasz).map(x => x.source.asInstanceOf[T]).toList
+        list = result.getHits(clasz).map(x => {
+          val it = x.source
+          it.$id = x.id.toString
+          it
+        }).toList
       }
     } catch {
       case e: IOException => e.printStackTrace
@@ -228,16 +240,19 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     list
   }
 
-
-  def createIndex[T](t: T): Unit = {
-    val entityType = clasz.getSimpleName
-    val index = new Index.Builder(t).index(conf.index).`type`(entityType).build()
+  def createIndex(t: T): Unit = {
+    val index = new Index.Builder(t).index(conf.index).`type`(entityType).refresh(true).build()
     var result: JestResult = null
     try {
       result = client.execute(index)
-      logger.debug(s"createIndex----------${result.getJsonString}")
+      if (result.isSucceeded)
+        t.$id = result.getValue("_id").toString
+      println(s"create----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
   }
+
+  case class Document(doc: T)
+
 }
