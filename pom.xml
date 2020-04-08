@@ -19,6 +19,7 @@
         <module>components/eventflows.repository.mongodb</module>
         <module>components/eventflows.repository.squeryl</module>
         <module>apps/eventflows.host</module>
+        <module>apps/eventflows.web</module>
     </modules>
 
     <dependencyManagement>
@@ -200,7 +201,7 @@
             <dependency>
                 <groupId>nl.basjes.parse.useragent</groupId>
                 <artifactId>yauaa</artifactId>
-                <version>5.15</version>
+                <version>5.17</version>
             </dependency>
 
             <dependency>
