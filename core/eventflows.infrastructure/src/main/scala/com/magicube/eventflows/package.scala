@@ -11,9 +11,12 @@ import org.joda.time.format.DateTimeFormat
 import org.joda.time.{DateTime, DateTimeZone}
 import org.json4s.DefaultFormats
 
+import scala.reflect.runtime.universe._
 import scala.util.matching.Regex
 
 package object eventflows {
+  val runtime = runtimeMirror(getClass.getClassLoader)
+
   val dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
 
   implicit def toDateTime(v: String): DateTime = {
@@ -50,6 +53,15 @@ package object eventflows {
 
   implicit class StringExtension(str: String) {
     def isEmptyOrNull: Boolean = str == null || "" == str
+  }
+
+  def timer[A](name: String)(block: => A) = {
+    val begin = System.nanoTime
+    val result = block
+    val end = System.nanoTime
+    val delta = end - begin
+    println(s"exec $name used ${delta / 1000000d}s")
+    result
   }
 
   private def extractDatePattern(v: String): String = {
