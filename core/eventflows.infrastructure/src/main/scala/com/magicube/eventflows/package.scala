@@ -3,42 +3,43 @@ package com.magicube
 import java.nio.charset.Charset
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
+import java.util.TimeZone
 
 import com.magicube.eventflows.Json.JSON.deserialize
 import org.asynchttpclient.Response
-import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
+import org.joda.time.{DateTime, DateTimeZone}
 import org.json4s.DefaultFormats
-
-import scala.annotation.StaticAnnotation
-import scala.reflect.runtime.universe._
-import scala.collection.mutable.ListBuffer
 
 import scala.util.matching.Regex
 
 package object eventflows {
   val dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
 
-  implicit def toDateTime(v: String) = {
+  implicit def toDateTime(v: String): DateTime = {
     val pattern = extractDatePattern(v)
     DateTime.parse(v, DateTimeFormat.forPattern(pattern))
   }
 
-  implicit def toDateTime(v: Timestamp) = {
+  implicit def dateTimeToString(v: DateTime): String = {
+    val dateTime = new DateTime(v, DateTimeZone.UTC)
+    dateTime.toString(dateFormat)
+  }
+
+  implicit def toDateTime(v: Timestamp): DateTime = {
     val sf = new SimpleDateFormat(dateFormat)
     DateTime.parse(sf.format(v), DateTimeFormat.forPattern(dateFormat))
   }
 
-  implicit def toSqlTime(v: DateTime) = {
+  implicit def toTimestamp(v: DateTime): Timestamp = {
     val sf = new SimpleDateFormat(dateFormat)
     new Timestamp(sf.parse(v.toString(dateFormat)).getTime)
   }
 
-  implicit class SqlTimeExtension(v: Timestamp) {
-    def toString(dateFormat: String) = {
-      val sf = new SimpleDateFormat(dateFormat)
-      sf.format(v)
-    }
+  implicit def timeStampToString(v: Timestamp): String = {
+    val sf = new SimpleDateFormat(dateFormat)
+    sf.setTimeZone(TimeZone.getTimeZone("GMT"))
+    sf.format(v)
   }
 
   implicit class CurlExtension(rep: Response) {
@@ -47,34 +48,8 @@ package object eventflows {
     def readAs[T: Manifest] = deserialize[T](readAsString, DefaultFormats)
   }
 
-  def getAnnotations[T <: StaticAnnotation](tpe: Type, cls: Class[_]): List[T] = {
-    val mirror = runtimeMirror(cls.getClassLoader)
-    val annotations = tpe.typeSymbol.annotations
-
-    val res = ListBuffer[T]()
-    for (annt <- annotations) {
-      val anntCls = annt.tree.tpe.typeSymbol.asClass
-      val classMirror = mirror.reflectClass(anntCls);
-      val anntType = annt.tree.tpe
-      val constructor = anntType.decl(termNames.CONSTRUCTOR).asMethod;
-      val constructorMirror = classMirror.reflectConstructor(constructor);
-
-      val instance = annt.tree match {
-        case Apply(c, args: List[Tree]) =>
-          val res = args.collect({
-            case i: Tree =>
-              i match {
-                case Literal(Constant(value)) =>
-                  value
-              }
-          })
-          constructorMirror(res: _*).asInstanceOf[T]
-      }
-
-
-      res += (instance)
-    }
-    res.toList
+  implicit class StringExtension(str: String) {
+    def isEmptyOrNull: Boolean = str == null || "" == str
   }
 
   private def extractDatePattern(v: String): String = {

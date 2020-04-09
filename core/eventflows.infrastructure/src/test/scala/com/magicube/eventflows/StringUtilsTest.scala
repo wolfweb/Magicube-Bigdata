@@ -5,8 +5,9 @@ import org.junit.Test
 class StringUtilsTest {
   @Test
   def func_String_Test(): Unit = {
-    var str: String = null
-    assert(!StringUtils.hasLength(str))
+    val str = "true"
+    val res = str.isEmptyOrNull
+    assert(!res)
   }
 }
 

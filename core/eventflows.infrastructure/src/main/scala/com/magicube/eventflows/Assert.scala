@@ -35,10 +35,5 @@ object Assert {
     if (`object` == null) throw new IllegalArgumentException(nullSafeGet(messageSupplier))
   }
 
-  def hasLength(text: String, message: String): Unit = {
-    if (!StringUtils.hasLength(text)) throw new IllegalArgumentException(message)
-  }
-
-  private def nullSafeGet(messageSupplier: Supplier[String]) = if (messageSupplier != null) messageSupplier.get
-  else null
+  private def nullSafeGet(messageSupplier: Supplier[String]) = if (messageSupplier != null) messageSupplier.get else null
 }

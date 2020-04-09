@@ -1,11 +1,11 @@
 package com.magicube.eventflows
 
+import java.sql.Timestamp
+
 import com.magicube.eventflows.Date.DateFactory
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 import org.junit.Test
-
-import scala.util.matching.Regex
 
 class DateFactoryTest {
   @Test
@@ -17,37 +17,20 @@ class DateFactoryTest {
   @Test
   def func_regex_test(): Unit = {
     val str = "2019-12-02T11:32:28Z"
-    val reg = new Regex("(\\d+)([/\\-]+)(\\d+)([/\\-]+)(\\d+)([T\\s]+)(\\d+)(:)(\\d+)(:)(\\d+)([\\.\\d+]*)(Z*)")
-    val m = reg.findFirstMatchIn(str)
-    val groups = m.get.subgroups.toList
-    val builder = new StringBuilder
-    builder ++= groups(0).flatMap(x => "y")
-    builder ++= groups(1)
-    builder ++= groups(2).flatMap(x => "M")
-    builder ++= groups(3)
-    builder ++= groups(4).flatMap(x => "d")
-    val flag = if (groups(5) == "T") "'T'" else groups(5)
-    builder ++= flag
-    builder ++= groups(6).flatMap(x => "H")
-    builder ++= groups(7)
-    builder ++= groups(8).flatMap(x => "m")
-    builder ++= groups(9)
-    builder ++= groups(10).flatMap(x => "s")
-    if (groups.size > 10) {
-      val suffix = if (groups(11).startsWith(".")) groups(11).flatMap(x => {
-        x match {
-          case '.' => "."
-          case _ => "S"
-        }
-      }).mkString else ""
-      if (suffix != "") {
-        builder ++= suffix
-        builder ++= groups(12)
-      } else {
-        builder ++= groups(12)
-      }
-    }
-    println(builder.mkString)
+    var date: DateTime = str
+    assert(date == DateTime.parse(str,DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ssZ")))
+
+    val timeStamp: Timestamp = date
+    assert(timeStamp!=null && timeStamp.toString == "2019-12-02 19:32:28.0")
+
+    date = timeStamp
+    assert(date == DateTime.parse(str,DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ssZ")))
+
+    var dateStr: String = date
+    assert(dateStr == "2019-12-02T11:32:28")
+
+    dateStr = timeStamp
+    assert(dateStr == "2019-12-02T11:32:28")
   }
 }
 
