@@ -52,7 +52,7 @@ package object eventflows {
   }
 
   implicit class StringExtension(str: String) {
-    def isEmptyOrNull: Boolean = str == null || "" == str
+    def isNullOrEmpty: Boolean = str == null || "" == str
   }
 
   def timer[A](name: String)(block: => A) = {

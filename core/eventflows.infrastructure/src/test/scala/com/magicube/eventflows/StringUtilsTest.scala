@@ -6,7 +6,7 @@ class StringUtilsTest {
   @Test
   def func_String_Test(): Unit = {
     val str = "true"
-    val res = str.isEmptyOrNull
+    val res = str.isNullOrEmpty
     assert(!res)
   }
 }

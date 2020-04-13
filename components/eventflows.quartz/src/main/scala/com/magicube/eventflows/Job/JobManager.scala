@@ -11,6 +11,7 @@ import org.quartz.impl._
 import org.quartz.impl.matchers.GroupMatcher
 
 import scala.collection.JavaConversions._
+import scala.reflect.ClassTag
 
 object Squartz {
 
@@ -78,12 +79,12 @@ object Squartz {
     build(props)
   }
 
-  def simpleBuilder[A <: Job](implicit squartz: Squartz, mA: Manifest[A]) = SquartzSimpleBuilder.build[A]
+  def simpleBuilder[A <: Job](implicit squartz: Squartz, mA: ClassTag[A]) = SquartzSimpleBuilder.build[A]
 
   def cronBuilder[A <: Job]
   (
     cronStr: String
-  )(implicit squartz: Squartz, mA: Manifest[A]) = SquartzCronBuilder.build[A](cronStr)
+  )(implicit squartz: Squartz, mA: ClassTag[A]) = SquartzCronBuilder.build[A](cronStr)
 
   def schedCron[A <: Job]
   (
@@ -94,7 +95,7 @@ object Squartz {
     triggerIdentOpt: Option[(String, Option[String])] = None,
     jobDataMapOpt: Option[Map[String, Any]] = None,
     triggerDataMapOpt: Option[Map[String, Any]] = None
-  )(implicit squartz: Squartz, mA: Manifest[A]): (Date, (String, String), (String, String)) = {
+  )(implicit squartz: Squartz, mA: ClassTag[A]): (Date, (String, String), (String, String)) = {
 
     val builder = cronBuilder[A](cronStr)
 
@@ -117,7 +118,7 @@ object Squartz {
     triggerIdentOpt: Option[(String, Option[String])] = None,
     jobDataMapOpt: Option[Map[String, Any]] = None,
     triggerDataMapOpt: Option[Map[String, Any]] = None
-  )(implicit squartz: Squartz, mA: Manifest[A]): (Date, (String, String), (String, String)) = {
+  )(implicit squartz: Squartz, mA: ClassTag[A]): (Date, (String, String), (String, String)) = {
     schedSimple[A](repeatInterval, repeatUnit, -1,
       startDateOpt, endDateOpt, jobIdentOpt, triggerIdentOpt,
       jobDataMapOpt, triggerDataMapOpt
@@ -134,7 +135,7 @@ object Squartz {
     triggerIdentOpt: Option[(String, Option[String])] = None,
     jobDataMapOpt: Option[Map[String, Any]] = None,
     triggerDataMapOpt: Option[Map[String, Any]] = None
-  )(implicit squartz: Squartz, mA: Manifest[A]): (Date, (String, String), (String, String)) = {
+  )(implicit squartz: Squartz, mA: ClassTag[A]): (Date, (String, String), (String, String)) = {
     schedSimple(repeatInterval, repeatUnit, -1,
       startDateOpt, endDateOpt, jobIdentOpt, triggerIdentOpt,
       jobDataMapOpt, triggerDataMapOpt
@@ -148,7 +149,7 @@ object Squartz {
     triggerIdentOpt: Option[(String, Option[String])] = None,
     jobDataMapOpt: Option[Map[String, Any]] = None,
     triggerDataMapOpt: Option[Map[String, Any]] = None
-  )(implicit squartz: Squartz, mA: Manifest[A]) = {
+  )(implicit squartz: Squartz, mA: ClassTag[A]) = {
     schedSimple[A](
       0,
       SECONDS,
@@ -173,7 +174,7 @@ object Squartz {
     triggerIdentOpt: Option[(String, Option[String])] = None,
     jobDataMapOpt: Option[Map[String, Any]] = None,
     triggerDataMapOpt: Option[Map[String, Any]] = None
-  )(implicit squartz: Squartz, mA: Manifest[A]): (Date, (String, String), (String, String)) = {
+  )(implicit squartz: Squartz, mA: ClassTag[A]): (Date, (String, String), (String, String)) = {
     val builder = repeatUnit match {
       case SECONDS =>
         if (totalCount >= 0) {
@@ -351,7 +352,7 @@ class NoJob extends Job {
 abstract class SquartzBuilder[T, U <: Job]
 (
   private val squartz: Squartz
-)(implicit mT: Manifest[T], mU: Manifest[U]) {
+)(implicit mT: ClassTag[T], mU: ClassTag[U]) {
 
   val jobBuilderOpt: Option[JobBuilder] = {
     mU.runtimeClass.toString match {
@@ -546,7 +547,7 @@ abstract class SquartzBuilder[T, U <: Job]
 
 object SquartzCronBuilder {
 
-  def build[A <: Job](cronStr: String)(implicit squartz: Squartz, mA: Manifest[A]) = new SquartzCronBuilder(CronScheduleBuilder.cronSchedule(cronStr))
+  def build[A <: Job](cronStr: String)(implicit squartz: Squartz, mA: ClassTag[A]) = new SquartzCronBuilder(CronScheduleBuilder.cronSchedule(cronStr))
 
   def dailyAtHourAndMinute(hour: Int, minute: Int)(implicit squartz: Squartz) = new SquartzCronBuilder[NoJob](
     CronScheduleBuilder.dailyAtHourAndMinute(hour, minute)
@@ -555,7 +556,7 @@ object SquartzCronBuilder {
   def dailyAtHourAndMinute[A <: Job]
   (
     hour: Int, minute: Int
-  )(implicit squartz: Squartz, mA: Manifest[A]) = new SquartzCronBuilder[A](
+  )(implicit squartz: Squartz, mA: ClassTag[A]) = new SquartzCronBuilder[A](
     CronScheduleBuilder.dailyAtHourAndMinute(hour, minute)
   )
 
@@ -566,7 +567,7 @@ object SquartzCronBuilder {
   def monthlyOnDayAndHourAndMinute[A <: Job]
   (
     dayOfMonth: Int, hour: Int, minute: Int
-  )(implicit squartz: Squartz, mA: Manifest[A]) = new SquartzCronBuilder[A](
+  )(implicit squartz: Squartz, mA: ClassTag[A]) = new SquartzCronBuilder[A](
     CronScheduleBuilder.monthlyOnDayAndHourAndMinute(dayOfMonth, hour, minute)
   )
 
@@ -577,7 +578,7 @@ object SquartzCronBuilder {
   def weeklyOnDayAndHourAndMinute[A <: Job]
   (
     dayOfWeek: Int, hour: Int, minute: Int
-  )(implicit squartz: Squartz, mA: Manifest[A]) = new SquartzCronBuilder[A](
+  )(implicit squartz: Squartz, mA: ClassTag[A]) = new SquartzCronBuilder[A](
     CronScheduleBuilder.weeklyOnDayAndHourAndMinute(dayOfWeek, hour, minute)
   )
 }
@@ -585,7 +586,7 @@ object SquartzCronBuilder {
 class SquartzCronBuilder[A <: Job]
 (
   scheduleBuilder: CronScheduleBuilder
-)(implicit squartz: Squartz, mA: Manifest[A]) extends SquartzBuilder[SquartzCronBuilder[A], A](squartz) {
+)(implicit squartz: Squartz, mA: ClassTag[A]) extends SquartzBuilder[SquartzCronBuilder[A], A](squartz) {
 
   def scheduleInTimeZone(timezone: java.util.TimeZone): SquartzCronBuilder[A] = {
     scheduleBuilder.inTimeZone(timezone)
@@ -612,13 +613,13 @@ class SquartzCronBuilder[A <: Job]
 
 object SquartzSimpleBuilder {
 
-  def build[A <: Job]()(implicit squartz: Squartz, mA: Manifest[A]) = new SquartzSimpleBuilder[A](SimpleScheduleBuilder.simpleSchedule)
+  def build[A <: Job]()(implicit squartz: Squartz, mA: ClassTag[A]) = new SquartzSimpleBuilder[A](SimpleScheduleBuilder.simpleSchedule)
 
   def repeatHourlyForever()(implicit squartz: Squartz) = new SquartzSimpleBuilder[NoJob](
     SimpleScheduleBuilder.repeatHourlyForever
   )
 
-  def repeatHourlyForever[A <: Job](implicit squartz: Squartz, mA: Manifest[A]) = new SquartzSimpleBuilder[A](
+  def repeatHourlyForever[A <: Job](implicit squartz: Squartz, mA: ClassTag[A]) = new SquartzSimpleBuilder[A](
     SimpleScheduleBuilder.repeatHourlyForever
   )
 
@@ -626,7 +627,7 @@ object SquartzSimpleBuilder {
     SimpleScheduleBuilder.repeatHourlyForever(hours)
   )
 
-  def repeatHourlyForever[A <: Job](hours: Int)(implicit squartz: Squartz, mA: Manifest[A]) = new SquartzSimpleBuilder[A](
+  def repeatHourlyForever[A <: Job](hours: Int)(implicit squartz: Squartz, mA: ClassTag[A]) = new SquartzSimpleBuilder[A](
     SimpleScheduleBuilder.repeatHourlyForever(hours)
   )
 
@@ -634,7 +635,7 @@ object SquartzSimpleBuilder {
     SimpleScheduleBuilder.repeatHourlyForTotalCount(count)
   )
 
-  def repeatHourlyForTotalCount[A <: Job](count: Int)(implicit squartz: Squartz, mA: Manifest[A]) = new SquartzSimpleBuilder[A](
+  def repeatHourlyForTotalCount[A <: Job](count: Int)(implicit squartz: Squartz, mA: ClassTag[A]) = new SquartzSimpleBuilder[A](
     SimpleScheduleBuilder.repeatHourlyForTotalCount(count)
   )
 
@@ -642,7 +643,7 @@ object SquartzSimpleBuilder {
     SimpleScheduleBuilder.repeatHourlyForTotalCount(count, hours)
   )
 
-  def repeatHourlyForTotalCount[A <: Job](count: Int, hours: Int)(implicit squartz: Squartz, mA: Manifest[A]) = new SquartzSimpleBuilder[A](
+  def repeatHourlyForTotalCount[A <: Job](count: Int, hours: Int)(implicit squartz: Squartz, mA: ClassTag[A]) = new SquartzSimpleBuilder[A](
     SimpleScheduleBuilder.repeatHourlyForTotalCount(count, hours)
   )
 
@@ -650,7 +651,7 @@ object SquartzSimpleBuilder {
     SimpleScheduleBuilder.repeatMinutelyForever
   )
 
-  def repeatMinutelyForever[A <: Job]()(implicit squartz: Squartz, mA: Manifest[A]) = new SquartzSimpleBuilder[A](
+  def repeatMinutelyForever[A <: Job]()(implicit squartz: Squartz, mA: ClassTag[A]) = new SquartzSimpleBuilder[A](
     SimpleScheduleBuilder.repeatMinutelyForever
   )
 
@@ -658,7 +659,7 @@ object SquartzSimpleBuilder {
     SimpleScheduleBuilder.repeatMinutelyForever(minutes)
   )
 
-  def repeatMinutelyForever[A <: Job](minutes: Int)(implicit squartz: Squartz, mA: Manifest[A]) = new SquartzSimpleBuilder[A](
+  def repeatMinutelyForever[A <: Job](minutes: Int)(implicit squartz: Squartz, mA: ClassTag[A]) = new SquartzSimpleBuilder[A](
     SimpleScheduleBuilder.repeatMinutelyForever(minutes)
   )
 
@@ -666,7 +667,7 @@ object SquartzSimpleBuilder {
     SimpleScheduleBuilder.repeatMinutelyForTotalCount(count)
   )
 
-  def repeatMinutelyForTotalCount[A <: Job](count: Int)(implicit squartz: Squartz, mA: Manifest[A]) = new SquartzSimpleBuilder[A](
+  def repeatMinutelyForTotalCount[A <: Job](count: Int)(implicit squartz: Squartz, mA: ClassTag[A]) = new SquartzSimpleBuilder[A](
     SimpleScheduleBuilder.repeatMinutelyForTotalCount(count)
   )
 
@@ -674,7 +675,7 @@ object SquartzSimpleBuilder {
     SimpleScheduleBuilder.repeatMinutelyForTotalCount(count, minutes)
   )
 
-  def repeatMinutelyForTotalCount[A <: Job](count: Int, minutes: Int)(implicit squartz: Squartz, mA: Manifest[A]) = new SquartzSimpleBuilder[A](
+  def repeatMinutelyForTotalCount[A <: Job](count: Int, minutes: Int)(implicit squartz: Squartz, mA: ClassTag[A]) = new SquartzSimpleBuilder[A](
     SimpleScheduleBuilder.repeatMinutelyForTotalCount(count, minutes)
   )
 
@@ -682,7 +683,7 @@ object SquartzSimpleBuilder {
     SimpleScheduleBuilder.repeatSecondlyForever
   )
 
-  def repeatSecondlyForever[A <: Job]()(implicit squartz: Squartz, mA: Manifest[A]) = new SquartzSimpleBuilder[A](
+  def repeatSecondlyForever[A <: Job]()(implicit squartz: Squartz, mA: ClassTag[A]) = new SquartzSimpleBuilder[A](
     SimpleScheduleBuilder.repeatSecondlyForever
   )
 
@@ -690,7 +691,7 @@ object SquartzSimpleBuilder {
     SimpleScheduleBuilder.repeatSecondlyForever(seconds)
   )
 
-  def repeatSecondlyForever[A <: Job](seconds: Int)(implicit squartz: Squartz, mA: Manifest[A]) = new SquartzSimpleBuilder[A](
+  def repeatSecondlyForever[A <: Job](seconds: Int)(implicit squartz: Squartz, mA: ClassTag[A]) = new SquartzSimpleBuilder[A](
     SimpleScheduleBuilder.repeatSecondlyForever(seconds)
   )
 
@@ -698,7 +699,7 @@ object SquartzSimpleBuilder {
     SimpleScheduleBuilder.repeatSecondlyForTotalCount(count)
   )
 
-  def repeatSecondlyForTotalCount[A <: Job](count: Int)(implicit squartz: Squartz, mA: Manifest[A]) = new SquartzSimpleBuilder[A](
+  def repeatSecondlyForTotalCount[A <: Job](count: Int)(implicit squartz: Squartz, mA: ClassTag[A]) = new SquartzSimpleBuilder[A](
     SimpleScheduleBuilder.repeatSecondlyForTotalCount(count)
   )
 
@@ -706,7 +707,7 @@ object SquartzSimpleBuilder {
     SimpleScheduleBuilder.repeatSecondlyForTotalCount(count, seconds)
   )
 
-  def repeatSecondlyForTotalCount[A <: Job](count: Int, seconds: Int)(implicit squartz: Squartz, mA: Manifest[A]) = new SquartzSimpleBuilder[A](
+  def repeatSecondlyForTotalCount[A <: Job](count: Int, seconds: Int)(implicit squartz: Squartz, mA: ClassTag[A]) = new SquartzSimpleBuilder[A](
     SimpleScheduleBuilder.repeatSecondlyForTotalCount(count, seconds)
   )
 }
@@ -714,10 +715,7 @@ object SquartzSimpleBuilder {
 class SquartzSimpleBuilder[A <: Job]
 (
   scheduleBuilder: SimpleScheduleBuilder
-)(implicit squartz: Squartz, mA: Manifest[A]) extends SquartzBuilder[SquartzSimpleBuilder[A], A](squartz) {
-
-  /*def this[A <: Job]()(implicit squartz: Squartz) = this[A](SimpleScheduleBuilder.simpleSchedule)
-  def this(squartzJob: Job)(implicit squartz: Squartz) = this(SimpleScheduleBuilder.simpleSchedule, Some(squartzJob))*/
+)(implicit squartz: Squartz, mA: ClassTag[A]) extends SquartzBuilder[SquartzSimpleBuilder[A], A](squartz) {
 
   def scheduleRepeatForever: SquartzSimpleBuilder[A] = {
     scheduleBuilder.repeatForever
