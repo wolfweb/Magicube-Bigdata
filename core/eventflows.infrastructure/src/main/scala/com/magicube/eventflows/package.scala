@@ -1,5 +1,6 @@
 package com.magicube
 
+import java.net.URLDecoder
 import java.nio.charset.Charset
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
@@ -15,8 +16,6 @@ import scala.reflect.runtime.universe._
 import scala.util.matching.Regex
 
 package object eventflows {
-  val runtime = runtimeMirror(getClass.getClassLoader)
-
   val dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
 
   implicit def toDateTime(v: String): DateTime = {
@@ -53,6 +52,15 @@ package object eventflows {
 
   implicit class StringExtension(str: String) {
     def isNullOrEmpty: Boolean = str == null || "" == str
+
+    def trim(c: String): String = {
+      str.stripPrefix(c).stripSuffix(c)
+    }
+
+    def urlDecode = {
+      val res = """\\u([0-9a-fA-F]{4})""".r.replaceAllIn(str, m => Integer.parseInt(m.group(1), 16).toChar.toString)
+      URLDecoder.decode(res, "UTF-8")
+    }
   }
 
   def timer[A](name: String)(block: => A) = {

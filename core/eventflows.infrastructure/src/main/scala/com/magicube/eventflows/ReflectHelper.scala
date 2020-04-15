@@ -1,8 +1,8 @@
 package com.magicube.eventflows
 
 object ReflectHelper {
-
   import scala.reflect.runtime.universe._
+  val runtime = runtimeMirror(getClass.getClassLoader)
 
   def classAnnotation[T: TypeTag, A: TypeTag]() = {
     val tpe = typeOf[T]
