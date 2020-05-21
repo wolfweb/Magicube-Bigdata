@@ -264,7 +264,7 @@ case class ElasticsearchProvider[T <: ElasticModel[TKey] : ClassTag, TKey](conf:
   }
 
   def updateIndexMapping(mapping: IndexMapping):Unit= {
-    val entityType = clasz.getSimpleName
+    if( !indicesExists().isSucceeded ) createIndex()
     val source = Map[String,IndexMapping](entityType->mapping)
     val putMapping = new PutMapping.Builder(conf.index,entityType, serialize(source, DefaultFormats))
     val result = client.execute(putMapping.build())
