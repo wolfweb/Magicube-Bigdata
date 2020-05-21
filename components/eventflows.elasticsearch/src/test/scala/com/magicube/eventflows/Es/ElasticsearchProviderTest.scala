@@ -5,17 +5,17 @@ import java.util.UUID
 import com.magicube.eventflows.Es.{ElasticFunction, ElasticModel}
 import org.junit.Test
 
-case class Foo(var name: String, var age: Int) extends ElasticModel
+case class Foo(override var id: String , var name: String, var age: Int) extends ElasticModel[String]
 
 class ElasticsearchProviderTest {
   private val url = "http://localhost:9200"
-  private val index = "debug"
+  private val index = "elastic-debug"
 
   implicit val clasz = classOf[Foo]
 
   @Test
   def func_elastic_test(): Unit = {
-    val elastic = ElasticFunction(index, Array[String](url))
+    val elastic = ElasticFunction[Foo,String](index, Array[String](url))
 
     var res = elastic.elastic.indicesExists()
     if(res.isSucceeded){
@@ -23,13 +23,13 @@ class ElasticsearchProviderTest {
       assert(res.isSucceeded)
     }
 
-    val foo = Foo(UUID.randomUUID.toString, Math.random().toInt)
+    val foo = Foo("1",UUID.randomUUID.toString, Math.random().toInt)
     elastic.create(foo)
 
     var allResult = elastic.elastic.queryAll()
     assert(allResult.size ==1)
 
-    val queryFoo = elastic.elastic.get(Map[String, String]("_id" -> foo.$id))
+    val queryFoo = elastic.elastic.get(Map[String, String]("id" -> foo.id))
     assert(queryFoo != null)
     queryFoo.name = "wolfweb"
     elastic.elastic.updateDocument(queryFoo)
@@ -42,19 +42,19 @@ class ElasticsearchProviderTest {
 
     elastic.elastic.deleteDocument(queryResult(0))
 
-    queryResult = elastic.elastic.query(Map[String, String]("_id" -> foo.$id))
+    queryResult = elastic.elastic.query(Map[String, String]("id" -> foo.id))
     assert(queryResult == null || queryResult.size == 0)
   }
 
   @Test
   def func_elastic_create_with_multi_index: Unit = {
     val count = 10
-    val elasticQuery = ElasticFunction(s"$index*", Array[String](url))
+    val elasticQuery = ElasticFunction[Foo,String](s"$index*", Array[String](url))
 
     var all = elasticQuery.elastic.queryAll()
 
-    val elastic1 = ElasticFunction(s"$index-1", Array[String](url))
-    val elastic2 = ElasticFunction(s"$index-2", Array[String](url))
+    val elastic1 = ElasticFunction[Foo,String](s"$index-1", Array[String](url))
+    val elastic2 = ElasticFunction[Foo,String](s"$index-2", Array[String](url))
 
     if (all.size > 0) {
       for (it <- all) {
@@ -66,7 +66,7 @@ class ElasticsearchProviderTest {
     }
 
     for (i <- 1 to count) {
-      val foo = Foo(s"${UUID.randomUUID.toString}_$i", i)
+      val foo = Foo(i.toString,s"${UUID.randomUUID.toString}_$i", i)
       if (i % 2 == 0) {
         elastic2.create(foo)
       } else {

@@ -45,8 +45,6 @@ object Application {
     env.getCheckpointConfig.setMaxConcurrentCheckpoints(1)
     env.getCheckpointConfig.enableExternalizedCheckpoints(ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION)
 
-    env.setStateBackend(new FsStateBackend(s"file:///$currentDirectory/checkpoints"))
-
     try {
       val service: AppComponent = Class.forName(s"com.magicube.eventflows.host.Apps.${appName}.${appName}Service").newInstance().asInstanceOf[AppComponent]
       println(s"start ${appName} service")

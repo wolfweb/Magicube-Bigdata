@@ -10,9 +10,9 @@ import org.junit.Test
 import scala.collection.mutable.Set
 
 class RepositoryTest {
-  val localAdapter = MySql("jdbc:mysql://192.168.10.251:3306/demo?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8", "root", "123456")
+  //val localAdapter = MySql("jdbc:mysql://192.168.10.251:3306/demo?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8", "root", "123456")
   val remoteAdapter = MySql("jdbc:mysql://localhost:3306/demo?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8", "root", "123456")
-  val localRep = Repository[Long, Foo](localAdapter)
+  //val localRep = Repository[Long, Foo](localAdapter)
   val remoteRep = Repository[Long, Foo](remoteAdapter, "foo")
 
   val dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
@@ -43,6 +43,8 @@ class RepositoryTest {
   @Test
   def func_test(): Unit = {
     //localRep.deleteAll()
+    remoteRep.create(Foo("내 멋진 \uD83C\uDF37\\n친구들에게\uD83C\uDF37",DateTime.now))
+
     remoteRep.deleteAll()
 
     for (step <- 1 to 10) {

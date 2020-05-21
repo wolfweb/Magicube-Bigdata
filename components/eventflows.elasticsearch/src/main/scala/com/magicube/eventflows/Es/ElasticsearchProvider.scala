@@ -8,13 +8,16 @@ import io.searchbox.client.{JestClient, JestClientFactory, JestResult}
 import io.searchbox.cluster.{Health, NodesInfo, NodesStats}
 import io.searchbox.core._
 import io.searchbox.indices._
+import io.searchbox.indices.mapping.PutMapping
 import org.elasticsearch.index.query.QueryBuilders
 import org.elasticsearch.search.builder.SearchSourceBuilder
 
 import scala.collection.JavaConversions._
 import scala.reflect.ClassTag
+import com.magicube.eventflows.Json.JSON._
+import org.json4s.DefaultFormats
 
-case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf)(implicit clasz: Class[T]) extends Serializable {
+case class ElasticsearchProvider[T <: ElasticModel[TKey] : ClassTag, TKey](conf: ElasticConf)(implicit clasz: Class[T]) extends Serializable {
   val client: JestClient = {
     val factory = new JestClientFactory
     factory.setHttpClientConfig(new HttpClientConfig
@@ -138,7 +141,7 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
 
   def updateDocument(t: T): JestResult = {
     val doc = Document(t)
-    val update = new Update.Builder(doc).index(t.$index).`type`(entityType).id(t.$id).refresh(true).build()
+    val update = new Update.Builder(doc).index(t.$index).`type`(entityType).id(t.id.toString).refresh(true).build()
     var result: JestResult = null
     try {
       result = client.execute(update)
@@ -150,7 +153,7 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
   }
 
   def deleteDocument(t: T): JestResult = {
-    val delete = new Delete.Builder(t.$id).index(t.$index).`type`(`entityType`).refresh(true).build
+    val delete = new Delete.Builder(t.id.toString).index(t.$index).`type`(`entityType`).refresh(true).build
     var result: JestResult = null
     try {
       result = client.execute(delete)
@@ -207,7 +210,6 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
       val result = client.execute(search)
       list = result.getHits(clasz).map(x => {
         val it = x.source
-        it.$id = x.id
         it.$index = x.index
         it
       }).toList
@@ -232,7 +234,6 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
       if (result.isSucceeded) {
         list = result.getHits(clasz).map(x => {
           val it = x.source
-          it.$id = x.id
           it.$index = x.index
           it
         }).toList
@@ -243,19 +244,35 @@ case class ElasticsearchProvider[T <: ElasticModel : ClassTag](conf: ElasticConf
     list
   }
 
-  def createIndex(t: T): Unit = {
-    val index = new Index.Builder(t).index(conf.index).`type`(entityType).refresh(true).build()
+  def createDoc(t: T): Unit = {
+    val index = new Index.Builder(t).index(conf.index).`type`(entityType).id(t.id.toString).refresh(true).build()
     var result: JestResult = null
     try {
       result = client.execute(index)
-      if (result.isSucceeded)
-        t.$id = result.getValue("_id").toString
       println(s"create----------${result.getJsonString}")
     } catch {
       case e: IOException => e.printStackTrace
     }
   }
 
-  case class Document(doc: T)
+  def createIndex(index:String):Unit={
+    val action = new CreateIndex.Builder(index).build()
+    val result =  client.execute(action)
+    println(s"create index----------${result.getJsonString}")
+  }
 
+  def updateIndexMapping(mapping: IndexMapping):Unit= {
+    val entityType = clasz.getSimpleName
+    val source = Map[String,IndexMapping](entityType->mapping)
+    val putMapping = new PutMapping.Builder(conf.index,entityType, serialize(source, DefaultFormats))
+    val result = client.execute(putMapping.build())
+    println(s"update mapping----------${result.getJsonString}")
+  }
+
+  case class Document(doc: T)
 }
+
+case class IndexMapping
+(
+  properties: Map[String,Map[String,Any]]
+)

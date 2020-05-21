@@ -1,6 +1,9 @@
 package com.magicube.eventflows.Es
 
-trait ElasticModel {
-  var $id: String = ""
+import io.searchbox.annotations.JestId
+
+trait ElasticModel[TKey] {
+  @JestId
+  var id: TKey
   var $index: String = ""
 }
