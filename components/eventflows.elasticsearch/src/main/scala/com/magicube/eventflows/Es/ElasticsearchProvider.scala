@@ -1,6 +1,6 @@
 package com.magicube.eventflows.Es
 
-import java.io.IOException
+import java.io.{IOException, InvalidObjectException}
 
 import com.google.gson.GsonBuilder
 import io.searchbox.client.config.HttpClientConfig
@@ -246,6 +246,7 @@ case class ElasticsearchProvider[T <: ElasticModel[TKey] : ClassTag, TKey](conf:
   }
 
   def createDoc(t: T): Unit = {
+    if(t.id==null) throw new InvalidObjectException(s"invalid id for elastic doc type ${entityType}")
     val index = new Index.Builder(t).index(conf.index).`type`(entityType).id(t.id.toString).refresh(true).build()
     var result: JestResult = null
     try {
