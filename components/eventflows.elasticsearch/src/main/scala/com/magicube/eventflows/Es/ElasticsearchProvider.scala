@@ -15,6 +15,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder
 import scala.collection.JavaConversions._
 import scala.reflect.ClassTag
 import com.magicube.eventflows.Json.JSON._
+import com.magicube.eventflows._
 import org.json4s.DefaultFormats
 
 case class ElasticsearchProvider[T <: ElasticModel[TKey] : ClassTag, TKey](conf: ElasticConf)(implicit clasz: Class[T]) extends Serializable {
@@ -255,8 +256,8 @@ case class ElasticsearchProvider[T <: ElasticModel[TKey] : ClassTag, TKey](conf:
     }
   }
 
-  def createIndex(index:String):Unit={
-    val action = new CreateIndex.Builder(index).build()
+  def createIndex(index:String = ""):Unit={
+    val action = new CreateIndex.Builder(if(index.isNullOrEmpty) conf.index else index).build()
     val result =  client.execute(action)
     println(s"create index----------${result.getJsonString}")
   }

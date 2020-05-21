@@ -2,7 +2,7 @@ package scala.com.magicube.eventflows.Es
 
 import java.util.UUID
 
-import com.magicube.eventflows.Es.{ElasticFunction, ElasticModel}
+import com.magicube.eventflows.Es.{ElasticFunction, ElasticModel, IndexMapping}
 import org.junit.Test
 
 case class Foo(override var id: String , var name: String, var age: Int) extends ElasticModel[String]
@@ -22,6 +22,10 @@ class ElasticsearchProviderTest {
       res  =  elastic.elastic.deleteIndex()
       assert(res.isSucceeded)
     }
+
+    val mappings = IndexMapping(Map[String,Map[String,Any]]("name"->Map[String,Any]("type"->"text","analyzer"->"ik_max_word","search_analyzer"->"ik_smart")))
+    elastic.elastic.createIndex()
+    elastic.elastic.updateIndexMapping(mappings)
 
     val foo = Foo("1",UUID.randomUUID.toString, Math.random().toInt)
     elastic.create(foo)
