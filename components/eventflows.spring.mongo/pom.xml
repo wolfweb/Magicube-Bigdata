@@ -9,9 +9,8 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-
     <groupId>com.magicube</groupId>
-    <artifactId>eventflows.elasticsearch</artifactId>
+    <artifactId>eventflows.spring.mongo</artifactId>
 
     <dependencies>
         <dependency>
@@ -20,22 +19,37 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.searchbox</groupId>
-            <artifactId>jest</artifactId>
-            <version>6.3.1</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.elasticsearch</groupId>
-            <artifactId>elasticsearch</artifactId>
-            <version>6.8.8</version>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-mongodb</artifactId>
+            <version>3.0.1.RELEASE</version>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongo-java-driver</artifactId>
+            <version>3.12.5</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongodb-driver-core</artifactId>
+            <version>4.0.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>bson</artifactId>
+            <version>4.0.4</version>
         </dependency>
         <dependency>
             <groupId>com.magicube</groupId>
             <artifactId>eventflows.infrastructure</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.magicube</groupId>
+            <artifactId>eventflows.repository</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>

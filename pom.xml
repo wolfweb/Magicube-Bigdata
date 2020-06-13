@@ -18,6 +18,10 @@
         <module>components/eventflows.useragent</module>
         <module>components/eventflows.repository.mongodb</module>
         <module>components/eventflows.repository.squeryl</module>
+        <module>components/eventflows.nlp</module>
+        <module>components/eventflows.search</module>
+        <module>components/eventflows.spring.jdbc</module>
+        <module>components/eventflows.spring.mongo</module>
         <module>apps/eventflows.host</module>
         <module>apps/eventflows.web</module>
     </modules>
@@ -188,20 +192,35 @@
             </dependency>
 
             <dependency>
-                <groupId>io.searchbox</groupId>
-                <artifactId>jest</artifactId>
-                <version>6.3.1</version>
-            </dependency>
-            <dependency>
-                <groupId>org.elasticsearch</groupId>
-                <artifactId>elasticsearch</artifactId>
-                <version>6.8.8</version>
-            </dependency>
-
-            <dependency>
                 <groupId>nl.basjes.parse.useragent</groupId>
                 <artifactId>yauaa</artifactId>
                 <version>5.17</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-context</artifactId>
+                <version>${spring.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-beans</artifactId>
+                <version>${spring.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-tx</artifactId>
+                <version>${spring.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-jdbc</artifactId>
+                <version>${spring.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter</artifactId>
+                <version>2.3.0.RELEASE</version>
             </dependency>
 
             <dependency>
@@ -227,6 +246,7 @@
         <slf4j.version>1.7.30</slf4j.version>
         <quartz.version>2.3.2</quartz.version>
         <json4s.version>3.7.0-M2</json4s.version>
+        <spring.version>5.2.7.RELEASE</spring.version>
         <logback.version>1.2.3</logback.version>
         <jackson.version>2.10.0</jackson.version>
         <typesafe.version>1.4.0</typesafe.version>

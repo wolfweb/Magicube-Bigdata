@@ -12,7 +12,6 @@ import org.joda.time.format.DateTimeFormat
 import org.joda.time.{DateTime, DateTimeZone}
 import org.json4s.DefaultFormats
 
-import scala.reflect.runtime.universe._
 import scala.util.matching.Regex
 
 package object eventflows {
@@ -46,6 +45,10 @@ package object eventflows {
 
   implicit class CurlExtension(rep: Response) {
     def readAsString = rep.getResponseBody(Charset.forName("UTF-8"))
+
+    def readStream = rep.getResponseBodyAsStream
+
+    def readAsBytes = rep.getResponseBodyAsBytes
 
     def readAs[T: Manifest] = deserialize[T](readAsString, DefaultFormats)
   }
