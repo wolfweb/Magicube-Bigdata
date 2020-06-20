@@ -36,29 +36,4 @@ class SegmenterTest {
     }
     writer.close()
   }
-
-
-  @Test
-  def func_aes_cropty_test(): Unit = {
-    val str = "123456"
-    val Key = "J8kb1kdlOYBW7iVPD+pQdrtiy7IwhiH6NtuU9z36IdY="
-    val IV = "C+vyV2eA/4z1DXz7T7SIug=="
-
-    val url = "http://static01.cloud7.com.cn/layout/layoutpack"
-
-    val keySpec = new SecretKeySpec(Base64.getDecoder.decode(Key), "AES")
-    var cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-
-    cipher.init(Cipher.ENCRYPT_MODE, keySpec, new IvParameterSpec(Base64.getDecoder.decode(IV)))
-    val encrypted = cipher.doFinal(str.getBytes())
-
-    cipher.init(Cipher.DECRYPT_MODE, keySpec, new IvParameterSpec(Base64.getDecoder.decode(IV)))
-    var decrypted = cipher.doFinal(encrypted)
-    assert(new String(decrypted) == str)
-
-    cipher = Cipher.getInstance("AES/CBC/NoPadding")
-    cipher.init(Cipher.DECRYPT_MODE, keySpec, new IvParameterSpec(Base64.getDecoder.decode(IV)))
-    decrypted = cipher.doFinal(Curl.get(url).readAsBytes)
-    assert(decrypted.length > 0)
-  }
 }

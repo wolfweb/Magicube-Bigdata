@@ -1,12 +1,11 @@
-package com.magicube.eventflows.Net
+package com.magicube.eventflows.email
 
 import java.io.File
-import org.apache.commons.mail._
+import java.util.List
 
 case class EmailConf
 (
   sender: String,
-  subject: String,
   senderMail: String,
   senderPwd: String,
   senderServer: String,
@@ -38,21 +37,22 @@ object Email {
     attachment: Option[(File)] = None
   )
 
-  case class send(conf:EmailConf) {
-    def a(mail: Mail) {
+  object send {
+    def a(mail: Mail) (implicit conf: EmailConf){
       val format =
         if (mail.attachment.isDefined) MultiPart
         else if (mail.richMessage.isDefined) Rich
         else Plain
 
-      val commonsMail: Email = format match {
+      val commonsMail: EmailProvider = format match {
         case Plain => new SimpleEmail().setMsg(mail.message)
         case Rich => new HtmlEmail().setHtmlMsg(mail.richMessage.get).setTextMsg(mail.message)
         case MultiPart => {
-          val attachment = new EmailAttachment()
-          attachment.setPath(mail.attachment.get.getAbsolutePath)
-          attachment.setDisposition(EmailAttachment.ATTACHMENT)
-          attachment.setName(mail.attachment.get.getName)
+          val attachment = EmailAttachment(
+            path = mail.attachment.get.getAbsolutePath,
+            disposition = EmailAttachment.ATTACHMENT,
+            name = mail.attachment.get.getName
+          )
           new MultiPartEmail().attach(attachment).setMsg(mail.message)
         }
       }
@@ -64,12 +64,11 @@ object Email {
       commonsMail.setAuthentication(conf.senderMail, conf.senderPwd)
       commonsMail.setHostName(conf.senderServer)
 
-      commonsMail.setCharset("utf8")
-
       commonsMail
         .setFrom(mail.from._1, mail.from._2)
         .setSubject(mail.subject)
-        .send()
+        .send
     }
   }
+
 }

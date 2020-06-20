@@ -283,7 +283,7 @@ class Squartz
       val triggers = getTriggersForJob(job.getKey)
       for (trigger <- triggers) {
         val triggerTime = new DateTime(trigger.getFinalFireTime.getTime)
-        if (subTimeSecond(triggerTime) > 0) {
+        if (subSeconds(triggerTime) > 0) {
           scheduler.resumeJob(trigger.getJobKey)
           scheduler.resumeTrigger(trigger.getKey)
         } else {

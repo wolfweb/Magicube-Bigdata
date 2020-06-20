@@ -27,7 +27,7 @@ class JsonDictFormat extends FormatComponent {
   override def formatData(stream: DataStream[InputRawData]): DataStream[InputRawData] = {
     stream.map(x => {
       if (x.rawStr != null) {
-        val keypair = deserialize[Map[String, Any]](x.rawStr, DefaultFormats)
+        val keypair = deserialize[Map[String, Any]](x.rawStr)
         for (it <- keypair) {
           x.datas.put(it._1, it._2)
         }

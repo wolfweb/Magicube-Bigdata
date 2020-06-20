@@ -1,6 +1,6 @@
 package com.magicube
 
-import java.net.URLDecoder
+import java.net.{URLDecoder, URLEncoder}
 import java.nio.charset.Charset
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
@@ -10,12 +10,15 @@ import com.magicube.eventflows.Json.JSON.deserialize
 import org.asynchttpclient.Response
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.{DateTime, DateTimeZone}
-import org.json4s.DefaultFormats
 
 import scala.util.matching.Regex
 
 package object eventflows {
   val dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+
+  implicit def dateTime2Timestamp(v: DateTime): Long = v.getMillis
+
+  implicit def toDateTime(v: Long): DateTime = new DateTime(v)
 
   implicit def toDateTime(v: String): DateTime = {
     val pattern = extractDatePattern(v)
@@ -50,7 +53,42 @@ package object eventflows {
 
     def readAsBytes = rep.getResponseBodyAsBytes
 
-    def readAs[T: Manifest] = deserialize[T](readAsString, DefaultFormats)
+    def readAs[T: Manifest] = deserialize[T](readAsString)
+  }
+
+  implicit class ReflectorExtension(ref: AnyRef) {
+    def getV(name: String): Any = ref.getClass.getMethods.find(_.getName == name).get.invoke(ref)
+
+    def setV(name: String, value: Any): Unit = {
+      val cls = ref.getClass
+      val method = cls.getMethods.find(_.getName == name + "_$eq")
+      method match {
+        case Some(x) => x.invoke(ref, value.asInstanceOf[AnyRef])
+        case None => throw new IllegalArgumentException(s"${cls.getName}'s [$name] field no setter")
+      }
+    }
+  }
+
+  implicit class ReflectorAnyExtension(v: Any) {
+    private val wrapperTypes = List[Class[_]](
+      classOf[Integer],
+      classOf[java.lang.Byte],
+      classOf[java.lang.Boolean],
+      classOf[java.lang.Short],
+      classOf[java.lang.Long],
+      classOf[java.lang.Float],
+      classOf[java.lang.Double],
+      classOf[Int],
+      classOf[Byte],
+      classOf[Boolean],
+      classOf[Short],
+      classOf[Long],
+      classOf[Float],
+      classOf[Double],
+      classOf[String]
+    )
+
+    def isPrimitive: Boolean = wrapperTypes.contains(v.getClass)
   }
 
   implicit class StringExtension(str: String) {
@@ -64,6 +102,10 @@ package object eventflows {
       val res = """\\u([0-9a-fA-F]{4})""".r.replaceAllIn(str, m => Integer.parseInt(m.group(1), 16).toChar.toString)
       URLDecoder.decode(res, "UTF-8")
     }
+
+    def urlEncode = {
+      URLEncoder.encode(str, "UTF-8")
+    }
   }
 
   def timer[A](name: String)(block: => A) = {
@@ -76,9 +118,9 @@ package object eventflows {
   }
 
   private def extractDatePattern(v: String): String = {
-    val reg = new Regex("(\\d+)([/\\-]+)(\\d+)([/\\-]+)(\\d+)([T\\s]+)(\\d+)(:)(\\d+)(:)(\\d+)([\\.\\d+]*)(Z*)")
+    val reg = new Regex("(\\d+)([/\\-]+)(\\d+)([/\\-]+)(\\d+)([T\\s]*)(\\d*)(:*)(\\d*)(:*)(\\d*)([\\.\\d+]*)(Z*)")
     val m = reg.findFirstMatchIn(v)
-    val groups = m.get.subgroups.toList
+    val groups = m.get.subgroups
     val builder = new StringBuilder
     builder ++= groups(0).flatMap(x => "y")
     builder ++= groups(1)

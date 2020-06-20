@@ -5,7 +5,7 @@ import com.magicube.eventflows.Spring.SpringEntrance
 import org.springframework.boot.CommandLineRunner
 import org.springframework.boot.autoconfigure.SpringBootApplication
 
-case class MongoEntrance() extends SpringEntrance[MongoRunner](classOf[MongoRunner]) {
+case class MongoEntrance(cls: Class[_]*) extends SpringEntrance[MongoRunner](classOf[MongoRunner], cls: _*) {
   def repository[T <: IEntityBase[TKey], TKey] = getService[Repository[T, TKey]](classOf[Repository[T, TKey]])
 }
 

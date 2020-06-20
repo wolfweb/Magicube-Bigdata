@@ -11,7 +11,7 @@ import scala.collection.mutable.Set
 
 class RepositoryTest {
   //val localAdapter = MySql("jdbc:mysql://192.168.10.251:3306/demo?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8", "root", "123456")
-  val remoteAdapter = MySql("jdbc:mysql://localhost:3306/demo?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8", "root", "123456")
+  val remoteAdapter = MySql("jdbc:mysql://localhost:3306/demo?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true", "root", "123456")
   //val localRep = Repository[Long, Foo](localAdapter)
   val remoteRep = Repository[Long, Foo](remoteAdapter, "foo")
 
@@ -29,7 +29,7 @@ class RepositoryTest {
   def func_rep_performance_test(): Unit = {
     val set = Set[Foo]()
     for (i <- 0 to 100000) {
-      if(i % 200 ==0){
+      if(i % 1000 ==0){
         remoteRep.create(set)
         set.clear()
       }else{

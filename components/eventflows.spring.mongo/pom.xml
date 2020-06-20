@@ -35,12 +35,12 @@
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongodb-driver-core</artifactId>
-            <version>4.0.4</version>
+            <version>${mongo.version}</version>
         </dependency>
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>bson</artifactId>
-            <version>4.0.4</version>
+            <version>${mongo.version}</version>
         </dependency>
         <dependency>
             <groupId>com.magicube</groupId>

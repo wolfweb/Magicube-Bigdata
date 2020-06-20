@@ -1,11 +1,12 @@
 package com.magicube.eventflows.Sql
 
 import com.magicube.eventflows.Json.JSON._
-import org.json4s.Formats
+import org.json4s.{DefaultFormats, Formats}
+
 import scala.util.matching.Regex
 
 object SqlHelper {
-  def sqlFormatParams[T: Manifest](data: T, formats: Formats): String = {
+  def sqlFormatParams[T: Manifest](data: T, formats: DefaultFormats): String = {
     val str = serialize(data, formats)
     str.replaceAll("]|\\[", "")
   }

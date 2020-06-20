@@ -30,7 +30,7 @@ case class RedisService(conf: RedisConf) {
   def getAs[T: Manifest](key: String): T = {
     val v = get(key)
     if (v != null)
-      deserialize(v, DefaultFormats)
+      deserialize(v)
     else
       null.asInstanceOf[T]
   }
@@ -54,14 +54,14 @@ case class RedisService(conf: RedisConf) {
   def hashGet[T: Manifest](key: String, field: String): T = {
     if (_client.hexists(key, field)) {
       val v = _client.hget(key, field)
-      deserialize[T](v, DefaultFormats)
+      deserialize[T](v)
     } else
       null.asInstanceOf[T]
   }
 
   def hashGetAll[T: Manifest](key: String): Array[T] = {
     if (_client.exists(key))
-      _client.hgetAll(key).asScala.map(x => deserialize[T](x._2, DefaultFormats)).toArray
+      _client.hgetAll(key).asScala.map(x => deserialize[T](x._2)).toArray
     else
       null.asInstanceOf[Array[T]]
   }
@@ -76,7 +76,7 @@ case class RedisService(conf: RedisConf) {
     if (_client.hexists(key, field)) {
       val v = _client.hget(key, field)
       _client.hdel(key, field)
-      deserialize[T](v, DefaultFormats)
+      deserialize[T](v)
     } else
       null.asInstanceOf[T]
   }
@@ -86,7 +86,7 @@ case class RedisService(conf: RedisConf) {
   }
 
   def hashSet[T: Manifest](key: String, field: String, value: T, expired: Int = defExpire): Unit = {
-    _client.hset(key, field, serialize(value, DefaultFormats))
+    _client.hset(key, field, serialize(value))
     setExpired(key, expired)
   }
 
@@ -97,7 +97,7 @@ case class RedisService(conf: RedisConf) {
 
   def listGetAll[T: Manifest](key: String): Array[T] = {
     if (_client.exists(key))
-      _client.lrange(key, 0, -1).asScala.map(x => deserialize(x, DefaultFormats)).toArray
+      _client.lrange(key, 0, -1).asScala.map(x => deserialize(x)).toArray
     else
       null.asInstanceOf[Array[T]]
   }
@@ -105,13 +105,13 @@ case class RedisService(conf: RedisConf) {
   def listPop[T: Manifest](key: String): T = {
     val v = _client.rpop(key)
     if (v != null)
-      deserialize(v, DefaultFormats)
+      deserialize(v)
     else
       null.asInstanceOf[T]
   }
 
   def listSet[T: Manifest](key: String, value: T, expired: Int = defExpire): Unit = {
-    val v = serialize(value, DefaultFormats)
+    val v = serialize(value)
     _client.lpush(key, v)
     setExpired(key, expired)
   }
@@ -122,7 +122,7 @@ case class RedisService(conf: RedisConf) {
   }
 
   def setAs[T: Manifest](key: String, value: T, expired: Int = defExpire): Unit = {
-    val v = serialize(value, DefaultFormats)
+    val v = serialize(value)
     set(key, v, expired)
   }
 

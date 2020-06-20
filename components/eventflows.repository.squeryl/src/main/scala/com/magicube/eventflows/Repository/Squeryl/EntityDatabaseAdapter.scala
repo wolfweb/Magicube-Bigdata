@@ -1,6 +1,7 @@
 package com.magicube.eventflows.Repository.Squeryl
 
-import com.mchange.v2.c3p0.ComboPooledDataSource
+import com.zaxxer.hikari.HikariDataSource
+import javax.sql.DataSource
 import org.slf4j.LoggerFactory
 import org.squeryl.adapters._
 import org.squeryl.internals.DatabaseAdapter
@@ -8,16 +9,16 @@ import org.squeryl.internals.DatabaseAdapter
 abstract class EntityDatabaseAdapter(url: String, driver: String, user: String = null, password: String = null) {
   protected val logger = LoggerFactory.getLogger(getClass.getName)
 
-  val DataSource: ComboPooledDataSource = createDateSource(url, driver, user, password)
+  val DataSource: HikariDataSource = createDateSource(url, driver, user, password)
   val adapter: DatabaseAdapter
 
-  def createDateSource(url: String, driver: String, user: String = "", password: String = ""): ComboPooledDataSource = {
+  def createDateSource(url: String, driver: String, user: String = "", password: String = ""): HikariDataSource = {
     logger.info("Creating connection with c3po connection pool")
     Class.forName(driver)
-    val ds = new ComboPooledDataSource
+    val ds = new HikariDataSource()
+    ds.setDriverClassName(driver)
     ds.setJdbcUrl(url)
-    ds.setDriverClass(driver)
-    ds.setUser(user)
+    ds.setUsername(user)
     ds.setPassword(password)
     ds
   }

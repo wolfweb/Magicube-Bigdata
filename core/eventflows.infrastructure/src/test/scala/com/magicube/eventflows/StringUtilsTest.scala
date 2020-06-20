@@ -43,6 +43,13 @@ class StringUtilsTest {
     res = str.urlDecode
     assert(res=="q=scala unicode unescapes &qs=n&form=QBRE&sp=-1&pq=scala unicode unescapes &sc=0-24&sk=&cvid=F9009DE0EEE04E62B11EDAFAC5C209AD")
   }
+
+  @Test
+  def func_String_Encode_Test():Unit={
+    val str = "?lastId=1&device=Android&w=1080&h=2139&version=4.6.0&nettp=MOBILE"
+    val res = str.urlEncode
+    assert(res=="%3FlastId%3D1%26device%3DAndroid%26w%3D1080%26h%3D2139%26version%3D4.6.0%26nettp%3DMOBILE")
+  }
 }
 
 

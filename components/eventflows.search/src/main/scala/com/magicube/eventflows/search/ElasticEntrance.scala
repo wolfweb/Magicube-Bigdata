@@ -4,8 +4,10 @@ import com.magicube.eventflows.Spring.SpringEntrance
 import org.springframework.boot.CommandLineRunner
 import org.springframework.boot.autoconfigure.SpringBootApplication
 
-case class ElasticEntrance() extends SpringEntrance[ElasticRunner](classOf[ElasticRunner]) {
-  def elasticProvider[T <: ElasticModel[TKey], TKey] = getService[ElasticsearchProvider[T, TKey]](classOf[ElasticsearchProvider[T, TKey]])
+case class ElasticEntrance(cls: Class[_]*) extends SpringEntrance[ElasticRunner](classOf[ElasticRunner], cls: _*) {
+  def elasticProvider[T <: ElasticModel[TKey], TKey]: ElasticsearchProvider[T, TKey] = {
+    getService[ElasticsearchProvider[T, TKey]](classOf[ElasticsearchProvider[T, TKey]])
+  }
 }
 
 @SpringBootApplication

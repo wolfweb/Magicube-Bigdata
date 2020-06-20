@@ -1,6 +1,6 @@
 package com.magicube.eventflows.Repository.Squeryl
 
-import com.mchange.v2.c3p0.ComboPooledDataSource
+import com.zaxxer.hikari.HikariDataSource
 import org.slf4j.LoggerFactory
 import org.squeryl.PrimitiveTypeMode._
 import org.squeryl._
@@ -12,7 +12,7 @@ case class EntitySchema(adapter: EntityDatabaseAdapter) extends Schema {
 
   def dbAdapter: NativeQueryAdapter = adapter.nativeQueryAdapter
 
-  def dataSource: ComboPooledDataSource = adapter.DataSource
+  def dataSource: HikariDataSource = adapter.DataSource
 
   def Table[T <: IEntity[_]]()(implicit manifestT: Manifest[T], ked: OptionalKeyedEntityDef[T, _]): Table[T] = super.table()
 

@@ -1,13 +1,13 @@
 package com.magicube.eventflows.core.Transform
 
 import com.magicube.eventflows.Date.DateFactory._
+import com.magicube.eventflows.toDateTime
 import com.magicube.eventflows.Exceptions.EventflowException
 import com.magicube.eventflows.core.InputRawData
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.flink.streaming.api.scala._
 import org.joda.time.DateTime
-import org.joda.time.format.DateTimeFormat
 
 case class ConvertTransformConf(fields: List[ConvertField])
 
@@ -35,7 +35,7 @@ class ConvertTransform extends TransformComponent {
             case "float" => x.datas.replace(field.field, x.datas.get(field.field).toString.toFloat)
             case "bool" => x.datas.replace(field.field, x.datas.get(field.field).toString.toBoolean)
             case "double" => x.datas.replace(field.field, x.datas.get(field.field).toString.toDouble)
-            case "datetime" => x.datas.replace(field.field, parseTime(x.datas.get(field.field).toString, DateTimeFormat.forPattern(field.formatPattern)))
+            case "datetime" => x.datas.replace(field.field, toDateTime(x.datas.get(field.field).toString))
             case "secondToDate" => x.datas.replace(field.field, new DateTime(x.datas.get(field.field).toString.toLong * 1000))
             case "timestampToDate" => x.datas.replace(field.field, new DateTime(x.datas.get(field.field).toString.toLong))
             case _ => x.datas.replace(field.field, x.datas.get(field.field).toString)
